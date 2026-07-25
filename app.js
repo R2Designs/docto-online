@@ -137,11 +137,14 @@ const SPECIFIC_FIRST=["maoi_crisis","serotonin_syndrome","thyroid_storm","cauda_
    "poison". Strip explicit denials before matching. Only reassurance phrases are
    removed — "no urine since noon" and "not able to pass urine" are findings, not
    denials, so they must survive. */
-const NEG_SYMPTOMS="fever|chest pain|chest tightness|blood|bleeding|numbness|weakness|slurred speech|"+
-  "speech problems|tingling|vomiting|nausea|trouble breathing|difficulty breathing|breathlessness|"+
-  "shortness of breath|severe pain|chills|back pain|abdominal pain|vision changes|visual changes|"+
-  "hearing loss|red streaks|phlegm|stridor|confusion|swelling|rash|headache|dizziness|"+
-  "other symptoms|sudden changes|heavy breathing|blood in";
+const NEG_SYMPTOMS="fever|chest pain|chest tightness|chest discomfort|blood|bleeding|numbness|weakness|"+
+  "slurred speech|speech problems|tingling|vomiting|nausea|trouble breathing|difficulty breathing|"+
+  "breathlessness|shortness of breath|short of breath|breathing trouble|heavy breathing|wheezing|"+
+  "severe pain|pain|tenderness|chills|rigors|back pain|abdominal pain|vision changes|visual changes|"+
+  "blurred vision|double vision|hearing loss|red streaks|phlegm|stridor|drooling|confusion|swelling|"+
+  "rash|headache|dizziness|dizzy|lightheaded|fainting|faint|sweating|sweats|clammy|palpitations|"+
+  "stiff neck|jaundice|yellowing|weight loss|incontinence|diarrhea|discharge|"+
+  "other symptoms|sudden changes|blood in";
 function scrubNegations(low){
   /* Denials usually come as a list — "no hearing loss, weakness, or slurred
      speech" — so once a denial starts, keep consuming the comma-separated items.
@@ -151,7 +154,11 @@ function scrubNegations(low){
     /* Allow descriptive words between the denial and the symptom — people write
        "no sharp lower-right abdominal pain", not "no abdominal pain". Missing
        this was sending a greasy-meal indigestion to hospital as appendicitis. */
-    "\\b(?:no|without|denies|negative for)\\s+(?:(?!but\\b|however\\b)[a-z-]+\\s+){0,3}(?:"+NEG_SYMPTOMS+")\\b"+
+    /* Denials come in many forms: "no X", "I'm not X", "doesn't hurt", "never had".
+       Note NEG_SYMPTOMS deliberately excludes words like "urine", so genuine
+       findings such as "not able to pass urine" are never stripped. */
+    "\\b(?:no|not|without|denies|negative for|isn'?t|aren'?t|wasn'?t|doesn'?t|don'?t|didn'?t|hasn'?t|haven'?t|never)"+
+    "\\s+(?:(?!but\\b|however\\b)[a-z-]+\\s+){0,3}(?:"+NEG_SYMPTOMS+")\\b"+
     "(?:\\s*,?\\s*(?:or\\s+|and\\s+)?(?!but\\b|however\\b|though\\b|and i\\b|but i\\b)"+
     "(?:no\\s+)?[a-z][a-z ]{0,25})*", "g");
   return low
@@ -159,13 +166,27 @@ function scrubNegations(low){
     // plant names that merely contain an alarming word
     .replace(/\bpoison (?:ivy|oak|sumac)\b/g," plantrash ");
 }
+/* Chest pain reproduced by pressing on the spot or by a particular movement, with
+   none of the systemic features, is chest-wall pain — not a heart or lung
+   emergency. Reproducibility on palpation is one of the few genuinely useful
+   discriminators here, so it's worth encoding rather than sending every sore rib
+   to an ambulance. Any systemic feature cancels the suppression. */
+function chestWallPattern(low){
+  const reproducible=/(hurts?|pain|sore|tender)[^.]{0,40}\b(when i (?:press|push|touch|stretch|lift|twist|move)|on palpation|to touch|pressing on|press on)\b/.test(low)
+    || /\b(press|pressing|push) (?:on )?my (?:ribs?|chest|sternum|breastbone)\b/.test(low);
+  const systemic=/\b(short of breath|breathless|gasping|blue lips|sweating|clammy|radiat|to my jaw|to my arm|faint|collaps|dizzy|palpitation|cough(?:ing)? blood|tracheal)\b/.test(low);
+  return reproducible && !systemic;
+}
 function keywordFlag(text){
   const low=scrubNegations(" "+text.toLowerCase()+" ");
   /* Gather every candidate — patterns, quoted vital signs, plain keywords — then
      let clinical precedence decide, rather than whichever rule happened to run first. */
-  const candidates=patternFlags(low);
+  let candidates=patternFlags(low);
+  if(chestWallPattern(low)) candidates=candidates.filter(id=>!["cardiac","pneumothorax","aortic_dissection"].includes(id));
   const v=vitalsFlag(low); if(v && !candidates.includes(v)) candidates.push(v);
+  const wall=chestWallPattern(low);
   for(const rf of DB.redFlagKeywords){
+    if(wall && ["cardiac","pneumothorax","aortic_dissection"].includes(rf.id)) continue;
     for(const k of rf.k){ if(low.includes(k)){ if(!candidates.includes(rf.id)) candidates.push(rf.id); break; } }
   }
   return candidates.length ? rankFlags(candidates) : null;

@@ -130,6 +130,14 @@ redFlagPatterns: [
     "inject","bladder"]
  ]},
  /* ---------- cardiovascular ---------- */
+ /* Classic MI wording. The keyword list only held the exact phrase "chest pain",
+    so "crushing pressure in the centre of my chest" was slipping through. */
+ {id:"cardiac", need:[
+   ["chest","sternum","breastbone","seene"],
+   ["crushing","heavy","heaviness","pressure","tightness","squeezing","band around","elephant"],
+   ["radiat","to my jaw","to my arm","left arm","shoulder","sweating","clammy","nausea","short of breath",
+    "breathless","cold sweat","impending doom"]
+ ]},
  {id:"cardiac", need:[
    ["upper stomach","upper abdomen","epigastr","indigestion","heartburn","belching","burping"],
    ["sweating heavily","sweating","clammy","cold sweat","dizzy","short of breath","antacid didn't work",
