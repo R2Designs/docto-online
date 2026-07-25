@@ -132,8 +132,35 @@ const SPECIFIC_FIRST=["maoi_crisis","serotonin_syndrome","thyroid_storm","cauda_
   "adrenal_crisis","hypoglycemia","hyperkalemia","rhabdo","malignant_hyperthermia",
   // infectious / haematological / environmental
   "neutropenic_fever","sickle_crisis","crao","heat_stroke"];
+/* People describe what they DON'T have, and a substring match can't tell the
+   difference: "no chest pain" contains "chest pain", "poison ivy" contains
+   "poison". Strip explicit denials before matching. Only reassurance phrases are
+   removed — "no urine since noon" and "not able to pass urine" are findings, not
+   denials, so they must survive. */
+const NEG_SYMPTOMS="fever|chest pain|chest tightness|blood|bleeding|numbness|weakness|slurred speech|"+
+  "speech problems|tingling|vomiting|nausea|trouble breathing|difficulty breathing|breathlessness|"+
+  "shortness of breath|severe pain|chills|back pain|abdominal pain|vision changes|visual changes|"+
+  "hearing loss|red streaks|phlegm|stridor|confusion|swelling|rash|headache|dizziness|"+
+  "other symptoms|sudden changes|heavy breathing|blood in";
+function scrubNegations(low){
+  /* Denials usually come as a list — "no hearing loss, weakness, or slurred
+     speech" — so once a denial starts, keep consuming the comma-separated items.
+     Stop at a conjunction that changes direction ("but", "however"), because
+     what follows those is a real finding. */
+  const denial=new RegExp(
+    /* Allow descriptive words between the denial and the symptom — people write
+       "no sharp lower-right abdominal pain", not "no abdominal pain". Missing
+       this was sending a greasy-meal indigestion to hospital as appendicitis. */
+    "\\b(?:no|without|denies|negative for)\\s+(?:(?!but\\b|however\\b)[a-z-]+\\s+){0,3}(?:"+NEG_SYMPTOMS+")\\b"+
+    "(?:\\s*,?\\s*(?:or\\s+|and\\s+)?(?!but\\b|however\\b|though\\b|and i\\b|but i\\b)"+
+    "(?:no\\s+)?[a-z][a-z ]{0,25})*", "g");
+  return low
+    .replace(denial," ")
+    // plant names that merely contain an alarming word
+    .replace(/\bpoison (?:ivy|oak|sumac)\b/g," plantrash ");
+}
 function keywordFlag(text){
-  const low=" "+text.toLowerCase()+" ";
+  const low=scrubNegations(" "+text.toLowerCase()+" ");
   /* Gather every candidate — patterns, quoted vital signs, plain keywords — then
      let clinical precedence decide, rather than whichever rule happened to run first. */
   const candidates=patternFlags(low);
@@ -215,6 +242,9 @@ const FLAG_PRIORITY=[
   // named conditions the person told us about outrank look-alike syndromes:
   // "I have myasthenia gravis" is far stronger evidence than a throat-symptom match
   "myasthenic_crisis",
+  // an atypical heart attack outranks the metabolic reading of the same symptoms:
+  // being wrong towards "cardiac" is survivable, the reverse often isn't
+  "atypical_acs",
   "aortic_dissection","tamponade","pneumothorax","asthma_severe","epiglottitis","breathing",
   // a quoted BP in the emergency range, or a calf clot with chest signs, beats a
   // generic chest-pain or eye match built from softer clues
@@ -244,8 +274,16 @@ async function emergencyStop(id, reason){
   S.emergencyReason=reason||null;
   let msg=DB.emergencyAdvice[id]||"";
   // the reader's own words for WHY, kept separate from our safety instructions
-  if(reason) msg = String(reason).replace(/\s+/g," ").trim() + " — " + msg;  // escaped downstream
-  await addBot(`<div class="emg"><b>${t("emerg_now")}</b><br>${esc(msg)}<br><br>${t("emerg_msg")}</div>
+  if(reason) msg = String(reason).replace(/\s+/g," ").trim() + " — " + msg;
+  /* For ambiguous presentations, don't assert one disease. Show what has to be
+     ruled out, so nobody is steered down a single wrong path. */
+  const diffs=(DB.emergencyDifferentials||{})[id];
+  const diffHtml = diffs && diffs.length
+    ? `<div class="diffs"><b>${t("couldBe")}</b><ul>${diffs.map(d=>`<li>${esc(d)}</li>`).join("")}</ul></div>` : "";
+  /* Headline states the urgency, not the diagnosis, whenever the picture is
+     ambiguous — a confident wrong label is worse than an honest urgent one. */
+  const headline = diffs && diffs.length ? t("emerg_generic") : t("emerg_now");
+  await addBot(`<div class="emg"><b>${headline}</b><br>${esc(msg)}${diffHtml}<br>${t("emerg_msg")}</div>
   <h3>${t("while_wait")}</h3><ul>
   <li>Stay with the person; keep them calm, seated or lying as comfortable.</li>
   <li>Do not give food/drink if drowsy, having chest pain, or a possible stroke/surgery situation.</li>
@@ -352,6 +390,36 @@ async function llmClassify(text){
 /* Read a free-text narrative and pull out the details the person already gave us,
    so we don't interrogate them about things they've just told us. Returns {} if the
    router is unavailable — the flow then simply asks every question as before. */
+/* The router forwards a limited number of flag ids to the model, so sending all
+   115 alphabetically means the ones past the cut are invisible — compartment
+   syndrome and necrotising fasciitis were being missed for that reason alone,
+   not because the model couldn't spot them. Send the ids that fit THIS complaint:
+   always the immediately-lethal core, then the best keyword matches. */
+const CORE_FLAGS=["cardiac","stroke","breathing","anaphylaxis","sepsis","crisis","poison","unconscious"];
+function relevantFlags(text, limit=30){
+  const low=" "+String(text||"").toLowerCase()+" ";
+  const toks=[...new Set(low.split(/[^a-z0-9]+/).filter(w=>w.length>=4))];
+  const score={};
+  for(const id in DB.emergencyAdvice){
+    if(id==="unspecified") continue;
+    const adv=(DB.emergencyAdvice[id]||"").toLowerCase();
+    let s=0;
+    id.split("_").forEach(w=>{ if(w.length>=4 && low.includes(w)) s+=6; });   // named outright
+    toks.forEach(t=>{ if(adv.includes(t)) s+=1; });                          // shared vocabulary
+    score[id]=s;
+  }
+  // a partially-matching pattern rule is the strongest hint of all
+  (DB.redFlagPatterns||[]).forEach(r=>{
+    const hits=r.need.filter(g=>g.some(term=>low.includes(term))).length;
+    if(hits) score[r.id]=(score[r.id]||0)+hits*5;
+  });
+  const out=CORE_FLAGS.filter(id=>DB.emergencyAdvice[id]);
+  Object.keys(score).sort((a,b)=>score[b]-score[a]).forEach(id=>{
+    if(out.length<limit && !out.includes(id) && score[id]>0) out.push(id);
+  });
+  return out.slice(0,limit);
+}
+
 async function llmExtract(text){
   /* Only worth a call when there's actually prose to read. "fever since yesterday"
      tells the rule engine everything already, so paying to parse it is waste. */
@@ -365,7 +433,7 @@ async function llmExtract(text){
     const resp=await fetch(CONFIG.LLM_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({mode:"extract", text,
         conds:DB.conds.filter(c=>c.id!=="generic").map(c=>c.id+"="+c.nm),
-        flags:Object.keys(DB.emergencyAdvice),
+        flags:relevantFlags(text),
         areas:Object.keys(DB_PAIN_MAP)}),
       signal:ctrl.signal});
     clearTimeout(to);
@@ -433,7 +501,12 @@ function localExtract(text){
    ["diarrhea","loose motions"],["loose motion","loose motions"],["dizzy","dizziness"],
    ["sweating","sweating"],["chills","chills"],["cough","cough"],["breathless","breathlessness"],
    ["numb","numbness"],["tremor","tremor"],["trembling","tremor"]]
-    .forEach(([k,v])=>{ if(stem(k) && !out.symptoms.includes(v)) out.symptoms.push(v); });
+    /* "aches when I cough" describes a trigger, not a cough. Recording it as a
+       symptom makes the read-back look careless and skews the matching. */
+    .forEach(([k,v])=>{
+      const trig=new RegExp("(?:when|whenever|if|after|during|on|or)\\s+(?:i\\s+)?"+k,"i");
+      if(stem(k) && !trig.test(low) && !out.symptoms.includes(v)) out.symptoms.push(v);
+    });
   out.symptoms=out.symptoms.slice(0,8);
   return out;
 }

@@ -61,9 +61,10 @@ redFlagPatterns: [
  ]},
  /* Ectopic pregnancy — one-sided lower abdominal pain + missed period/pregnancy */
  {id:"ectopic", need:[
-   ["lower abdomen","lower abdominal","one side pain","pelvic pain","pet ke niche","lower belly"],
+   ["lower abdomen","lower abdominal","one side pain","pelvic pain","pet ke niche","lower belly","pelvis"],
    ["missed period","late period","periods missed","pregnant","pregnancy","positive test","garbh"],
-   ["pain","bleeding","spotting","dizzy","faint","shoulder pain"]
+   // needs a concerning feature — bare "pain" in pregnancy is usually benign
+   ["bleeding","spotting","dizzy","faint","lightheaded","shoulder pain","collaps","severe pain","sharp, severe"]
  ]},
  /* Meningitis — fever with neck stiffness / light intolerance / rash */
  {id:"meningitis", need:[
@@ -71,9 +72,24 @@ redFlagPatterns: [
    ["stiff neck","neck stiff","cannot touch chin","neck pain and fever","gardan akad"],
    ["headache","light hurts","photophobia","rash","confus","drowsy","vomit"]
  ]},
- /* Diabetic emergency — high sugar with vomiting/rapid breathing/extreme thirst */
+ /* Silent / atypical heart attack. In an older or diabetic person the classic
+    chest pain is often absent, and the picture — sudden lethargy, sweating,
+    faster breathing, one vomit, "no pain anywhere" — reads as something mild.
+    This must outrank the metabolic reading of the same symptoms. */
+ {id:"atypical_acs", need:[
+   ["diabet","elderly","76-year","78-year","80-year","82-year","85-year","grandmother","grandfather",
+    "my mother","my father","senior citizen","70-year","72-year","75-year"],
+   ["sluggish","lethargic","unusually tired","suddenly weak","loss of appetite","lost her appetite",
+    "lost his appetite","not himself","not herself","acting strange","confus"],
+   ["sweating","clammy","breathing faster","breathing a bit faster","short of breath","vomit","nausea",
+    "jaw","shoulder","indigestion"]
+ ]},
+ /* Diabetic emergency — needs actual evidence of a glucose/ketone problem, not
+    merely the word "diabetic" beside a vomit. Without that, the same symptoms
+    in an older adult are more likely cardiac or septic. */
  {id:"dka", need:[
-   ["diabet","sugar is high","high sugar","blood sugar","shugar"],
+   ["sugar is high","high sugar","blood sugar","sugar reading","glucose","hba1c","ketone","shugar",
+    "over 450","above 600","450 mg","600 mg","reads high"],
    ["vomit","deep breathing","rapid breathing","breathless","very thirsty","excessive thirst",
     "drowsy","confus","fruity breath","stomach pain"]
  ]},
@@ -315,7 +331,10 @@ redFlagPatterns: [
  {id:"gi_bleed", need:[
    ["blood in my stool","blood in the stool","bright red blood","rectal bleeding","passed blood","blood when i pass",
     "blood in my motion","blood in the toilet","bleeding from the back","maroon stool","black tarry"],
-   ["stool","motion","poo","bowel","rectal","toilet","blood"]
+   /* Volume or systemic upset. A streak on the paper after a hard stool is
+      usually piles; a significant amount with dizziness is a bleed. */
+   ["significant amount","large amount","lots of blood","a lot of blood","clots","filling the toilet",
+    "black","tarry","maroon","dizzy","faint","lightheaded","weak","pale","severe pain","crampy"]
  ]},
  /* Anaphylaxis — allergen exposure plus skin and airway together */
  {id:"anaphylaxis", need:[
@@ -438,6 +457,7 @@ emergencyAdvice: {
  dehydration:"Repeated loose stools or vomiting with very little urine, dizziness on standing, or an inability to keep fluids down means significant dehydration. Start ORS in small frequent sips right away, and go to a hospital — you may need IV fluids, especially if this is a child or an elderly person.",
  preeclampsia:"In pregnancy, a persistent headache, blurred vision or seeing spots, sudden swelling of the face or hands, or pain under the ribs can signal pre-eclampsia. Go to your maternity hospital now for a blood-pressure and urine check — this can progress quickly.",
  poison:"Suspected poisoning/overdose/bite — emergency now. Do not induce vomiting.",
+ atypical_acs:"In an older adult — especially with diabetes — a heart attack often arrives with NO chest pain at all. Sudden lethargy, loss of appetite, one episode of vomiting, light sweating and slightly faster breathing is a recognised presentation, and diabetic nerve damage is why the pain is missing. The same picture also fits a serious infection or a metabolic crisis, and all three are dangerous. Do not let her sleep it off — sleeping through it is how these are missed. Call an ambulance now and ask for an ECG and troponin on arrival. Keep her sitting up and resting, give nothing by mouth, and do not give aspirin without medical advice if there is any chance of a bleed.",
  /* ---- cardiovascular (advanced) ---- */
  endocarditis:"Weeks of low-grade fever, night sweats and fatigue in someone with a heart murmur, now with splinter-like streaks under the nails and painful raised spots on the fingertips, is infective endocarditis — an infection on a heart valve throwing off small emboli. It needs blood cultures and an echocardiogram, then weeks of intravenous antibiotics; tablets from a pharmacy will not clear it and taking them first can mask the cultures. Go to a hospital today, before any antibiotic.",
  svc_syndrome:"Swelling of the face, neck and upper chest that worsens on bending or lying down, with distended chest veins and a hoarse voice, is superior vena cava obstruction — the main vein returning blood from the head is being compressed, usually by a mass in the chest. Go to an emergency department today. Sit upright rather than lying flat, and seek help sooner if breathing becomes difficult, you become confused, or swallowing becomes hard.",
@@ -550,6 +570,35 @@ emergencyAdvice: {
  maoi_crisis:"This looks like a tyramine reaction — an MAOI antidepressant (phenelzine, tranylcypromine, isocarboxazid, selegiline, moclobemide) taken with aged cheese, cured meat, red wine, soy sauce, fermented or overripe foods can push blood pressure to dangerous levels within an hour. A pounding headache with neck stiffness, palpitations, sweating and nausea is the classic picture, and it is NOT a migraine. Go to an emergency department immediately and tell them you take an MAOI and what you ate — they have specific treatments for this and will not use certain standard drugs. Do not take a triptan or any migraine medicine, and do not lie flat.",
  serotonin_syndrome:"Agitation or confusion with muscle twitching or stiffness, sweating, fever, shivering, fast heartbeat and dilated pupils — especially after starting or combining serotonergic drugs (SSRIs/SNRIs, MAOIs, tramadol, triptans, linezolid, St John's wort) — can be serotonin syndrome. Stop nothing on your own, but go to an emergency department now and take a list of everything you take.",
  torsion:"Sudden severe testicular pain is an emergency (torsion)."
+},
+
+/* ---------- WHEN NOT TO NAME ONE DISEASE ----------
+   Some presentations are genuinely ambiguous, and stating a single diagnosis
+   confidently is its own hazard: an atypical heart attack labelled "DKA" sends
+   someone down the wrong path, and a label that turns out wrong costs trust in
+   the escalation itself. For these ids the app shows a risk-based headline and
+   lists what must be ruled out, in rough order of danger. Ids NOT listed here
+   are near-pathognomonic (anaphylaxis, opioid overdose) and are named plainly. */
+emergencyDifferentials: {
+ atypical_acs:["A heart attack — which in older and diabetic people often comes with no chest pain",
+   "A serious infection turning body-wide (sepsis)",
+   "A metabolic crisis such as very high or very low blood sugar"],
+ dka:["A diabetic metabolic crisis (DKA or very high sugar)",
+   "A heart attack, which can present without chest pain in diabetes",
+   "A serious infection, which is often what triggers the crisis"],
+ sepsis:["Sepsis — an infection turning body-wide",
+   "A heart attack presenting without chest pain",
+   "A metabolic crisis such as very high blood sugar or low sodium"],
+ tachy_severe:["An abnormal heart rhythm",
+   "Infection, blood loss or dehydration driving the heart rate up",
+   "An overactive thyroid or a drug effect"],
+ hypertensive_crisis:["A hypertensive emergency damaging brain, heart or kidneys",
+   "A stroke or bleed in the brain",
+   "A surge-producing tumour or a drug/food interaction"],
+ dehydration:["Significant dehydration needing intravenous fluids",
+   "The infection or illness causing the fluid loss",
+   "Kidney injury from the fluid loss"],
+ unspecified:["A condition needing urgent hospital assessment"]
 },
 
 /* ---------- LAB REFERENCE RANGES for report OCR parsing ---------- */
