@@ -83,6 +83,89 @@ redFlagPatterns: [
    ["not passing urine","no urine","very little urine","peshab nahi","dizzy when standing",
     "dizzy on standing","cannot keep anything down","sunken eyes","very weak","dry mouth and dizzy"]
  ]},
+ /* Cauda equina — saddle numbness + bladder/bowel change. The person usually
+    presents it as "bad back pain", and resting is the instinctive wrong answer. */
+ {id:"cauda_equina", need:[
+   ["numb","no feeling","cannot feel","can't feel","cant feel","sunn","tingling","pins and needles"],
+   ["inner thigh","inner thighs","groin","buttock","saddle","between my legs","perineum","private area",
+    "genital","sit bones","both legs"]
+ ]},
+ {id:"cauda_equina", need:[
+   ["back pain","lower back","spine","slip disc","disc","sciatica","lifted","lifting","pop in my back","kamar dard"],
+   ["cannot feel if","couldn't tell if","can't tell if","cant tell if","not able to pass urine","cannot pass urine",
+    "retention","leaking urine","wet myself","no control over","lost control of my bladder","lost control of my bowel",
+    "incontinen","cannot feel myself wiping","couldn't feel myself wiping","numb when i wipe"]
+ ]},
+ /* Aortic dissection — tearing pain radiating to the back */
+ {id:"aortic_dissection", need:[
+   ["tearing","ripping","like being torn","knife between my shoulder"],
+   ["chest","between my shoulder blades","upper back","back"]
+ ]},
+ /* Leaking aortic aneurysm */
+ {id:"aaa", need:[
+   ["pulsating","pulsatile","throbbing lump","aneurysm"],
+   ["abdomen","abdominal","belly","stomach","back"]
+ ]},
+ /* Sepsis — infection plus systemic collapse signs */
+ {id:"sepsis", need:[
+   ["fever","infection","bukhar","high temperature","chills","rigors"],
+   ["confus","disorient","not making sense","very drowsy","slurring","mottled","blotchy skin","cold clammy",
+    "shivering uncontrollably","breathing very fast","barely passing urine","not passed urine all day","bp is low","low blood pressure"]
+ ]},
+ /* Necrotising soft-tissue infection — pain out of proportion, spreading fast */
+ {id:"nec_fasc", need:[
+   ["pain out of proportion","pain much worse than it looks","excruciating skin pain","spreading redness",
+    "redness spreading","red line spreading","dusky","blister","skin turning purple","skin turning black"],
+   ["fever","very unwell","feel terrible","chills","rapidly","fast","by the hour"]
+ ]},
+ /* Compartment syndrome — after injury or a tight cast */
+ {id:"compartment", need:[
+   ["cast","plaster","bandage too tight","after the injury","after my fracture","crush","broke my"],
+   ["pain is getting worse","severe pain","unbearable pain","pain out of proportion","tight","swollen and tight",
+    "numb","tingling","cannot move my toes","cannot move my fingers"]
+ ]},
+ /* Acute angle-closure glaucoma */
+ {id:"glaucoma_acute", need:[
+   ["eye pain","painful eye","red eye","eye is red"],
+   ["halo","rainbow around light","blurred vision","blurry vision","vision is blurred","hazy vision","vomit","headache"]
+ ]},
+ /* Giant cell (temporal) arteritis */
+ {id:"temporal_arteritis", need:[
+   ["temple","temporal","side of my head","scalp"],
+   ["tender","hurts to brush","hurts to comb","jaw aches when","jaw pain when chewing","jaw claudication",
+    "vision","blurred","lost sight"]
+ ]},
+ /* Retinal detachment */
+ {id:"retinal_detach", need:[
+   ["floaters","flashes of light","flashing lights","curtain","shadow across","veil over my vision","black curtain"],
+   ["vision","eye","sight","see"]
+ ]},
+ /* DVT with possible pulmonary embolism */
+ {id:"dvt_pe", need:[
+   ["calf","one leg","leg is swollen","swollen leg","thigh is swollen","behind my knee"],
+   ["swollen","swelling","warm","red","tender","painful"],
+   ["breathless","short of breath","chest pain","cough","hard to breathe","pain when i breathe","coughing blood",
+    "long flight","long journey","after surgery","bed rest","plaster"]
+ ]},
+ /* Carbon monoxide — the "everyone in the house has it" clue */
+ {id:"co_poisoning", need:[
+   ["headache","dizzy","nausea","confus","drowsy"],
+   ["everyone in the house","whole family","my roommate too","others also","my pet","the dog too",
+    "geyser","gas heater","generator","coal","angeethi","sigri","chimney","boiler"]
+ ]},
+ /* Meningococcal sepsis — the non-blanching rash */
+ {id:"meningococcal", need:[
+   ["rash","spots","purple marks","red spots","blotches","petechia","petechiae"],
+   ["does not fade","doesn't fade","dont fade","do not fade","don't fade","not fade when press","glass test",
+    "non-blanching","non blanching","stays when i press","still there when press","press a glass",
+    "pressing a glass","glass on them","glass against"]
+ ]},
+ /* Same emergency described without knowing the glass test: fever + purple/bruise-like spots */
+ {id:"meningococcal", need:[
+   ["fever","bukhar","high temperature"],
+   ["purple spots","purple rash","purple marks","dark red spots","blood spots","bruise-like","looks like bruises",
+    "pinprick spots","petechia","petechiae"]
+ ]},
  /* MAOI + tyramine ("cheese reaction") — a hypertensive crisis that reads like a migraine.
     The person is often certain it's just a bad headache, which is exactly the danger. */
  {id:"maoi_crisis", need:[
@@ -134,6 +217,18 @@ emergencyAdvice: {
  dehydration:"Repeated loose stools or vomiting with very little urine, dizziness on standing, or an inability to keep fluids down means significant dehydration. Start ORS in small frequent sips right away, and go to a hospital — you may need IV fluids, especially if this is a child or an elderly person.",
  preeclampsia:"In pregnancy, a persistent headache, blurred vision or seeing spots, sudden swelling of the face or hands, or pain under the ribs can signal pre-eclampsia. Go to your maternity hospital now for a blood-pressure and urine check — this can progress quickly.",
  poison:"Suspected poisoning/overdose/bite — emergency now. Do not induce vomiting.",
+ cauda_equina:"Numbness across the inner thighs, buttocks or groin — the area you'd sit on a saddle — together with not being able to feel yourself urinate or wipe, is cauda equina syndrome until proven otherwise. The nerve bundle at the base of the spine is being compressed, and permanent loss of bladder, bowel and sexual function can follow within HOURS. Resting in bed is the one thing that must not happen here. Go to a hospital emergency department NOW and use these exact words: 'I have saddle numbness and bladder symptoms with back pain — I need an urgent MRI to rule out cauda equina.' Do not wait for morning, do not wait to see if it settles, and do not let anyone send you home with painkillers without a scan.",
+ aortic_dissection:"A sudden tearing or ripping pain in the chest or between the shoulder blades — often described as the worst pain of your life, sometimes with a difference between your two arms — can be an aortic dissection. Call an ambulance now (India 108). Do not drive yourself, do not take aspirin, and stay as still as possible.",
+ aaa:"Severe abdominal or back pain with a pulsating feeling in the abdomen, especially over 60 or with known aneurysm, can be a leaking aortic aneurysm. Call an ambulance immediately — do not drive yourself and take nothing by mouth.",
+ sepsis:"Fever or a very low temperature together with confusion, fast breathing, a racing heart, cold clammy or mottled skin, or barely passing urine can be sepsis — an infection turning body-wide. Sepsis kills quickly and worsens by the hour. Go to a hospital emergency department NOW and say the word 'sepsis' — it triggers a specific fast-track protocol.",
+ nec_fasc:"Skin pain far out of proportion to how the area looks, spreading redness you can almost watch advance, tense swelling, blistering or a dusky patch, with fever and feeling profoundly unwell, can be a deep spreading soft-tissue infection. This needs emergency surgical assessment within hours — go to hospital now, do not wait to see if antibiotics by mouth help.",
+ compartment:"Severe, worsening pain in a limb after an injury, crush, or a tight cast — pain far beyond what the injury suggests, worse on stretching the muscle, with tightness, tingling or numbness — can be compartment syndrome. Muscle and nerve die within hours. Go to an emergency department now. Do not elevate the limb above heart level and do not apply ice; if there's a cast or tight bandage, tell them immediately.",
+ glaucoma_acute:"A painful red eye with blurred vision, halos around lights, a hazy cornea, headache and vomiting can be acute angle-closure glaucoma. Sight can be lost within a day. Go to an eye hospital or emergency department NOW — do not use any eye drops you have at home and stay in a well-lit room (darkness widens the pupil and worsens it).",
+ temporal_arteritis:"A new headache over the temple in someone over 50 — with scalp tenderness (even brushing hair hurts), jaw aching while chewing, or any blurring or loss of vision — can be giant cell arteritis. Untreated, it can blind the other eye within days. Go to an emergency department today and ask for an urgent ESR/CRP; steroid treatment is started before the biopsy, not after.",
+ retinal_detach:"A sudden shower of new floaters, flashes of light, or a shadow or curtain moving across your vision is a retinal detachment until proven otherwise. Vision saved depends on hours to days. Go to an eye hospital emergency today — avoid strenuous activity and sudden head movement on the way.",
+ dvt_pe:"Pain and swelling in one calf or thigh, especially with warmth or redness — and above all with breathlessness or chest pain that's worse on breathing in — suggests a clot that may have travelled to the lungs. Go to a hospital emergency department now. Do not massage or rub the leg and do not walk it off.",
+ co_poisoning:"Headache, dizziness, nausea and confusion affecting several people (or pets) in the same building — and easing when you go outside — points to carbon monoxide. Get everyone into fresh air immediately, leave doors open, do not switch anything electrical on or off, and call emergency services. Carbon monoxide has no smell; a working detector is the only reliable warning.",
+ meningococcal:"A rash of small red or purple spots that does NOT fade when you press a glass against it, with fever, is meningococcal sepsis. This is one of the fastest-moving emergencies in medicine. Call an ambulance now — do not wait for more spots to appear or for the person to look worse.",
  hypertensive_crisis:"That blood pressure is in the emergency range (180/120 or above). With a pounding headache, neck stiffness, palpitations, dizziness or nausea alongside it, this is a hypertensive emergency, not a migraine — organs can be injured within hours. Go to a hospital emergency department NOW; do not drive yourself. Do not take an extra dose of your BP medicine to force the number down at home — dropping it too fast is dangerous in itself. Take a photo of your BP readings and bring every medicine you take, including any prescribed for depression.",
  maoi_crisis:"This looks like a tyramine reaction — an MAOI antidepressant (phenelzine, tranylcypromine, isocarboxazid, selegiline, moclobemide) taken with aged cheese, cured meat, red wine, soy sauce, fermented or overripe foods can push blood pressure to dangerous levels within an hour. A pounding headache with neck stiffness, palpitations, sweating and nausea is the classic picture, and it is NOT a migraine. Go to an emergency department immediately and tell them you take an MAOI and what you ate — they have specific treatments for this and will not use certain standard drugs. Do not take a triptan or any migraine medicine, and do not lie flat.",
  serotonin_syndrome:"Agitation or confusion with muscle twitching or stiffness, sweating, fever, shivering, fast heartbeat and dilated pupils — especially after starting or combining serotonergic drugs (SSRIs/SNRIs, MAOIs, tramadol, triptans, linezolid, St John's wort) — can be serotonin syndrome. Stop nothing on your own, but go to an emergency department now and take a list of everything you take.",

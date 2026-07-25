@@ -112,7 +112,9 @@ let pendingText=null, activeChips=null;
 /* Drug-interaction emergencies outrank a raw vital sign: a hypertensive reading
    caused by an MAOI needs MAOI-specific handling (no triptans, tell the ER what
    you take), and that advice would be lost under the generic BP warning. */
-const SPECIFIC_FIRST=["maoi_crisis","serotonin_syndrome"];
+const SPECIFIC_FIRST=["maoi_crisis","serotonin_syndrome","cauda_equina","aortic_dissection","aaa",
+  "nec_fasc","compartment","meningococcal","co_poisoning","glaucoma_acute","temporal_arteritis",
+  "retinal_detach","dvt_pe","sepsis"];
 function keywordFlag(text){
   const low=" "+text.toLowerCase()+" ";
   const p=patternFlag(low);
