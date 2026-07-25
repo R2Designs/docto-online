@@ -166,6 +166,20 @@ function scrubNegations(low){
     // plant names that merely contain an alarming word
     .replace(/\bpoison (?:ivy|oak|sumac)\b/g," plantrash ");
 }
+/* Which body region the person is describing, from the pain areas they picked.
+   Regions that genuinely share advice are listed as neighbours; everything else
+   is treated as incompatible. */
+const AREA_REGION={ head:"head", eyes:"head", ear:"head", teeth:"head", throat:"head",
+  chest:"chest", upabd:"abdomen", lowabd:"abdomen", urinary:"pelvis",
+  back:"back", joints:"limb", muscles:"limb", skin:"skin" };
+const REGION_NEIGHBOURS={ head:["neck"], neck:["head","back"], chest:[], abdomen:["pelvis"],
+  pelvis:["abdomen"], back:["neck"], limb:[], skin:[] };
+function complaintRegion(){
+  if(!S || !S.pains || !S.pains.length) return null;
+  const regs=[...new Set(S.pains.map(p=>AREA_REGION[p]).filter(Boolean))];
+  return regs.length===1 ? regs[0] : null;   // only guard when the location is unambiguous
+}
+
 /* Chest pain reproduced by pressing on the spot or by a particular movement, with
    none of the systemic features, is chest-wall pain — not a heart or lung
    emergency. Reproducibility on palpation is one of the few genuinely useful
@@ -336,11 +350,53 @@ function scoreConditions(){
   S.pains.forEach(p=>{ (DB_PAIN_MAP[p]||[]).forEach(cid=>{ if(cid!=="CHEST_SPECIAL") sc[cid]=(sc[cid]||0)+2; }); });
   if(S.temp && S.temp>=100.4){ sc.fever=(sc.fever||0)+2; sc.flu=(sc.flu||0)+1; }
   if(S.feverKind==="warm"){ sc.fever=(sc.fever||0)+1; }
+  /* Anatomy guard. Advice is written for a body region — "elevate above heart
+     level" only means something for a limb. Blocking cross-region matches makes
+     the ankle-advice-for-a-rib-cage class of error structurally impossible,
+     rather than something I patch one condition at a time. */
+  const region=complaintRegion();
+  if(region){
+    DB.conds.forEach(c=>{
+      if(!c.rg || c.rg==="systemic" || c.rg===region) return;
+      if(region==="skin" || c.rg==="skin") { sc[c.id]=0; return; }   // skin advice never transfers
+      if(!REGION_NEIGHBOURS[region] || !REGION_NEIGHBOURS[region].includes(c.rg)) sc[c.id]=0;
+    });
+  }
+  /* Pain reproducible by pressing or by one movement is chest-wall pain. It must
+     land on its own entry, not the limb-injury plan — "elevate above heart level"
+     and "compression bandage" are meaningless for a rib and unsafe for a chest. */
+  if(chestWallPattern(scrubNegations(" "+text+" "))){
+    sc.costochondritis=(sc.costochondritis||0)+8;
+    sc.sprain=Math.max(0,(sc.sprain||0)-4);
+  }
   // the narrative reader's opinion counts, but doesn't override a strong keyword match
   if(S.llmHint) sc[S.llmHint]=(sc[S.llmHint]||0)+3;
   S.scores=sc;
   let best=null,bs=0; for(const id in sc){ if(sc[id]>bs){ bs=sc[id]; best=id; } }
-  if(!best || bs===0) best="generic";
+
+  /* A fit FLOOR, not just a winner. Previously the highest score won even at 1/50,
+     so a complaint we don't cover was handed the nearest plan with full confidence.
+     Below the floor we say so instead — the honest answer is better care than a
+     confident wrong one, and it's what stops this failing again for whatever
+     complaint isn't in the catalogue. */
+  const FIT_FLOOR=3;
+  /* A weak keyword match is acceptable when the reader independently named the
+     same condition — two mechanisms agreeing is worth more than one strong
+     keyword hit. Everything else below the floor falls back honestly. */
+  const corroborated = S.llmHint && S.llmHint===best && bs>=2;
+  if(!best || (bs<FIT_FLOOR && !corroborated)) best="generic";
+
+  /* Cross-check against the reader. If it read the prose and named a condition in
+     a different body region than the keyword match, the keyword match is the one
+     more likely to be wrong — it can't tell "pain in my chest" from "chest cold". */
+  if(S.llmHint && best!=="generic"){
+    const mine=DB.conds.find(c=>c.id===best), theirs=DB.conds.find(c=>c.id===S.llmHint);
+    if(mine && theirs && mine.rg && theirs.rg && mine.rg!==theirs.rg &&
+       mine.rg!=="systemic" && theirs.rg!=="systemic"){
+      best = sc[theirs.id] >= sc[mine.id] ? theirs.id : "generic";
+    }
+  }
+  S.fit=bs;
   return DB.conds.find(c=>c.id===best);
 }
 function confidence(){ const vals=Object.values(S.scores).sort((a,b)=>b-a);

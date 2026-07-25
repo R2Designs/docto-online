@@ -696,7 +696,7 @@ testRules: [
 /* modern[]: {t:text, f?:flag}  flags: nsaid, pcm, decong, sed(antihistamine sedating), lax_stim */
 conds: [
 
-{id:"fever", nm:"Fever (viral)", al:["fever","bukhar","temperature","viral","body hot","jwar"],
+{id:"fever", rg:"systemic", nm:"Fever (viral)", al:["fever","bukhar","temperature","viral","body hot","jwar"],
  sys:"general", doctor:"General physician",
  dq:[{q:"Any of these along with fever?",opts:["Severe body/joint ache","Rash or red spots","Chills & sweating cycles","Burning urine","Sore throat/cold","None of these"]}],
  modern:[
@@ -713,7 +713,7 @@ conds: [
  seeDoc:["Fever lasting more than 3 days","Temperature ≥103°F not settling with paracetamol","Fever with burning urine, ear pain, severe throat pain (needs source check)","Any fever in infants, elderly, pregnancy, diabetes"],
  emerg:["Stiff neck, rash that doesn't fade on pressure, confusion or fits","Breathlessness or chest pain","Signs of dehydration (very little urine, drowsiness)"]},
 
-{id:"cold", nm:"Common cold", al:["cold","runny nose","blocked nose","sneezing","jukam","zukam","nazla","coryza"],
+{id:"cold", rg:"chest", nm:"Common cold", al:["cold","runny nose","blocked nose","sneezing","jukam","zukam","nazla","coryza"],
  sys:"resp", doctor:"General physician / ENT",
  dq:[{q:"What's the mucus like?",opts:["Clear & watery","Thick yellow/green","Mostly blocked, little mucus"]}],
  modern:[
@@ -731,7 +731,7 @@ conds: [
  seeDoc:["Not improving after 10 days or worsening after initial improvement","Facial pain/pressure with thick discharge (sinusitis)","Ear pain develops","High fever"],
  emerg:["Breathlessness or wheezing","Drowsiness/confusion"]},
 
-{id:"cough", nm:"Cough", al:["cough","khansi","khaansi","coughing"],
+{id:"cough", rg:"chest", nm:"Cough", al:["cough","khansi","khaansi","coughing"],
  sys:"resp", doctor:"General physician / pulmonologist if persistent",
  dq:[{q:"Which type fits best?",opts:["Dry, tickly cough","Wet cough with phlegm","Cough mainly at night","Cough with wheeze/whistling"]},
      {q:"Phlegm colour (if any)?",opts:["White/clear","Yellow/green","Blood-streaked","No phlegm"]}],
@@ -749,7 +749,7 @@ conds: [
  seeDoc:["Cough beyond 3 weeks (needs chest X-ray — TB must be ruled out)","Yellow-green phlegm with fever/breathlessness (possible chest infection — antibiotics are a doctor's call)","Wheeze — may need an inhaler (prescription)","Night cough with acidity (reflux) or weight loss"],
  emerg:["Coughing up blood","Breathless at rest / lips turning blue","Chest pain with breathing"]},
 
-{id:"sore_throat", nm:"Sore throat", al:["sore throat","throat pain","gala kharab","gale me dard","kharash","pharyngitis","tonsil"],
+{id:"sore_throat", rg:"head", nm:"Sore throat", al:["sore throat","throat pain","gala kharab","gale me dard","kharash","pharyngitis","tonsil"],
  sys:"resp", doctor:"ENT / General physician",
  dq:[{q:"Look with a torch — what do you see/feel?",opts:["Just red/scratchy","White patches/pus on tonsils","High fever + swollen neck glands","Hoarse voice mainly"]}],
  modern:[
@@ -766,7 +766,7 @@ conds: [
  seeDoc:["Pus/white patches with high fever (strep test/antibiotics)","Not improving in 3–4 days","Recurrent tonsillitis (ENT opinion)","Hoarseness beyond 3 weeks"],
  emerg:["Cannot swallow even saliva / drooling","Difficulty breathing or muffled voice","Swelling of one side of throat/neck (abscess)"]},
 
-{id:"flu", nm:"Flu (influenza)", al:["flu","influenza","body ache fever","viral with body pain"],
+{id:"flu", rg:"systemic", nm:"Flu (influenza)", al:["flu","influenza","body ache fever","viral with body pain"],
  sys:"resp", doctor:"General physician",
  modern:[
   {t:"Rest + fluids aggressively (this IS the treatment; it runs ~1 week)."},
@@ -778,7 +778,7 @@ conds: [
  seeDoc:["High-risk person (get antiviral early)","Fever >3 days","Improving then suddenly worse (secondary infection)"],
  emerg:["Breathlessness, chest pain, confusion, blue lips","Not passing urine (dehydration)"]},
 
-{id:"sinusitis", nm:"Sinusitis", al:["sinus","sinusitis","facial pressure","heavy head cold","cheek pain nose"],
+{id:"sinusitis", rg:"head", nm:"Sinusitis", al:["sinus","sinusitis","facial pressure","heavy head cold","cheek pain nose"],
  sys:"resp", doctor:"ENT",
  modern:[
   {t:"Steam inhalation 3×/day + saline nasal rinse — mainstay."},
@@ -789,7 +789,7 @@ conds: [
  tests:[], seeDoc:["Symptoms >10 days or getting worse","High fever with severe one-sided face pain","Recurrent sinusitis (ENT for scan)"],
  emerg:["Swelling/redness around an eye, vision change, severe headache with vomiting"]},
 
-{id:"hayfever", nm:"Allergy / hay fever", al:["allergy","hay fever","dust allergy","pollen","allergic rhinitis","sneezing morning","itchy eyes nose"],
+{id:"hayfever", rg:"chest", nm:"Allergy / hay fever", al:["allergy","hay fever","dust allergy","pollen","allergic rhinitis","sneezing morning","itchy eyes nose"],
  sys:"resp", doctor:"ENT / Allergist",
  modern:[
   {t:"Cetirizine 10 mg or loratadine 10 mg once daily (loratadine = non-drowsy).", f:""},
@@ -800,7 +800,7 @@ conds: [
  tests:[], seeDoc:["Not controlled with the above","Wheeze/night cough (asthma check)","For allergy testing"],
  emerg:["Any throat/tongue swelling or breathlessness after exposure/food → emergency (anaphylaxis)"]},
 
-{id:"earache", nm:"Ear pain / infection", al:["ear pain","earache","kaan dard","kan me dard","ear infection","ear blocked"],
+{id:"earache", rg:"head", nm:"Ear pain / infection", al:["ear pain","earache","kaan dard","kan me dard","ear infection","ear blocked"],
  sys:"ent", doctor:"ENT",
  dq:[{q:"Which fits?",opts:["Pain after cold, inside ear","Itchy outer ear, worse on pulling","Blocked feeling/wax","Discharge from ear"]}],
  modern:[
@@ -812,7 +812,7 @@ conds: [
  tests:[], seeDoc:["Pain >2–3 days or worsening / discharge appears","Child with high fever or both ears","Hearing reduced after episode","Recurrent infections"],
  emerg:["Swelling/redness BEHIND the ear","Sudden complete hearing loss","Severe dizziness or facial weakness"]},
 
-{id:"headache", nm:"Headache (tension)", al:["headache","sir dard","sar dard","head pain","sardard"],
+{id:"headache", rg:"head", nm:"Headache (tension)", al:["headache","sir dard","sar dard","head pain","sardard"],
  sys:"neuro", doctor:"General physician / Neurologist if frequent",
  dq:[{q:"Which pattern fits best?",opts:["Band-like/both sides, stress or screen related","One-sided throbbing with nausea/light sensitivity (migraine-like)","With blocked nose/face pressure","Started after missing sleep/meals/water"]}],
  modern:[
@@ -825,7 +825,7 @@ conds: [
  seeDoc:["More than 1–2 headaches/week or need painkillers often","Migraine pattern (a doctor can prescribe faster-acting specific medicines — triptans — and preventives)","Headache changing pattern"],
  emerg:["Sudden worst-ever/thunderclap headache","With fever + stiff neck or rash","With weakness/slurred speech/vision loss","After head injury","New headache with vomiting on waking"]},
 
-{id:"migraine", nm:"Migraine", al:["migraine","adha sir dard","one side headache","aadha sar"],
+{id:"migraine", rg:"head", nm:"Migraine", al:["migraine","adha sir dard","one side headache","aadha sar"],
  sys:"neuro", doctor:"Neurologist",
  modern:[
   {t:"Treat EARLY at first sign: ibuprofen 400 mg (after food) or paracetamol 1000 mg + rest in a dark quiet room.", f:"nsaid"},
@@ -837,7 +837,7 @@ conds: [
  seeDoc:["First severe migraine (confirm diagnosis)","Frequent attacks — preventive treatment exists","Aura lasting >1 hour"],
  emerg:["'Worst ever' or abrupt-onset headache","Aura with limb weakness or speech difficulty (stroke mimic)"]},
 
-{id:"acidity", nm:"Acidity / heartburn", al:["acidity","heartburn","acid reflux","gerd","seene me jalan","khatti dakar","sour burp","chest burning after food"],
+{id:"acidity", rg:"abdomen", nm:"Acidity / heartburn", al:["acidity","heartburn","acid reflux","gerd","seene me jalan","khatti dakar","sour burp","chest burning after food","burning behind my breastbone","burning in my chest after eating","sour taste"],
  sys:"digestive", doctor:"Gastroenterologist if persistent",
  dq:[{q:"When does it burn most?",opts:["After spicy/heavy/late meals","On lying down at night","Empty stomach mornings","Almost daily regardless"]}],
  modern:[
@@ -850,7 +850,7 @@ conds: [
  seeDoc:["Symptoms >2 weeks despite the above (needs proper evaluation — possibly endoscopy/H. pylori test)","Age >50 with new symptoms","On daily painkillers (they cause gastritis)"],
  emerg:["Difficulty/pain swallowing, food sticking","Vomiting blood / black stools","Unintentional weight loss","Chest pain with sweating/breathlessness — treat as HEART until proven otherwise"]},
 
-{id:"indigestion", nm:"Indigestion / gas / bloating", al:["gas","bloating","indigestion","pet phoolna","badhazmi","apach","burping","farting","flatulence","pet me gas"],
+{id:"indigestion", rg:"abdomen", nm:"Indigestion / gas / bloating", al:["gas","bloating","indigestion","pet phoolna","badhazmi","apach","burping","farting","flatulence","pet me gas"],
  sys:"digestive", doctor:"General physician",
  modern:[
   {t:"Simethicone (anti-gas) after meals as needed; antacid if burning too."},
@@ -861,7 +861,7 @@ conds: [
  tests:[], seeDoc:["Persistent daily bloating >2–3 weeks","With weight loss or appetite loss","New symptoms after 50"],
  emerg:["Severe pain with vomiting and no gas/stool passing (obstruction)","Pain with rigid hard abdomen"]},
 
-{id:"diarrhea", nm:"Diarrhea (loose motions)", al:["diarrhea","loose motion","dast","loose stools","patli latrine","stomach upset motion"],
+{id:"diarrhea", rg:"abdomen", nm:"Diarrhea (loose motions)", al:["diarrhea","loose motion","dast","loose stools","patli latrine","stomach upset motion","watery stools","watery diarrhea","keep running to the toilet"],
  sys:"digestive", doctor:"General physician",
  dq:[{q:"Any of these?",opts:["Watery only","With vomiting too","Blood or mucus in stool","After outside/street food","More than 8–10 motions/day"]}],
  modern:[
@@ -875,7 +875,7 @@ conds: [
  seeDoc:["Beyond 3–4 days","Recurrent episodes (stool test)","Recent antibiotic use","Diabetic/elderly early"],
  emerg:["Blood in stool or high fever with motions","Signs of dehydration: very little/dark urine, dizziness, sunken eyes, drowsiness (esp. children/elderly)","Severe continuous abdominal pain"]},
 
-{id:"constipation", nm:"Constipation", al:["constipation","kabz","qabz","hard stool","pet saaf nahi","motion problem"],
+{id:"constipation", rg:"abdomen", nm:"Constipation", al:["constipation","kabz","qabz","hard stool","pet saaf nahi","motion problem","haven't had a bowel movement","not passed stool","no bowel movement"],
  sys:"digestive", doctor:"General physician",
  modern:[
   {t:"Fibre up: 2 fruits + 2 veg servings + whole grains daily; Isabgol (psyllium) 1–2 tsp in warm water/milk at bedtime — first-line and safe."},
@@ -886,7 +886,7 @@ conds: [
  tests:[], seeDoc:["No relief in 2 weeks despite the above","Alternating constipation-diarrhea","Needs laxatives constantly"],
  emerg:["Blood in stool / black stool","Constipation with severe pain + vomiting + bloating (obstruction)","New-onset after age 50 with weight loss"]},
 
-{id:"vomiting", nm:"Nausea / vomiting", al:["vomiting","ulti","nausea","jee michlana","matli","throwing up"],
+{id:"vomiting", rg:"abdomen", nm:"Nausea / vomiting", al:["vomiting","ulti","nausea","jee michlana","matli","throwing up"],
  sys:"digestive", doctor:"General physician",
  modern:[
   {t:"Sip ORS/clear fluids in SMALL frequent sips (large gulps re-trigger); suck ice chips if needed."},
@@ -898,7 +898,7 @@ conds: [
  tests:[], seeDoc:["Vomiting >24 h or can't keep any fluid down","Diabetic who can't eat (sugar risk)","Vomiting during pregnancy that prevents eating"],
  emerg:["Blood or 'coffee-grounds' in vomit","Green (bile) vomit with severe pain/bloating","With severe headache/stiff neck or after head injury","Signs of dehydration"]},
 
-{id:"stomach_pain", nm:"Stomach pain / cramps", al:["stomach pain","pet dard","abdominal pain","pet me dard","stomach cramp","tummy ache"],
+{id:"stomach_pain", rg:"abdomen", nm:"Stomach pain / cramps", al:["stomach pain","pet dard","abdominal pain","pet me dard","stomach cramp","tummy ache"],
  sys:"digestive", doctor:"General physician",
  dq:[{q:"Where exactly is the pain?",opts:["Upper middle (burning — likely acidity)","Around navel, crampy with gas","Lower right side","Lower abdomen with urine burning","All over / can't localize"]}],
  modern:[
@@ -910,7 +910,7 @@ conds: [
  tests:[], seeDoc:["Pain recurring over days/weeks","Pain with fever","Pain related to periods (see period-pain plan)"],
  emerg:["Severe pain, or pain moving to lower-right abdomen with fever/vomiting (appendicitis)","Rigid, board-like abdomen","Pain with black stool/blood","Pain in pregnancy","Severe pain with no gas/stool passing"]},
 
-{id:"piles", nm:"Piles (hemorrhoids)", al:["piles","hemorrhoid","bawaseer","bavasir","anal pain","blood while passing stool","fissure"],
+{id:"piles", rg:"pelvis", nm:"Piles (hemorrhoids)", al:["piles","hemorrhoid","bawaseer","bavasir","anal pain","blood while passing stool","fissure"],
  sys:"digestive", doctor:"General surgeon / proctologist",
  dq:[{q:"Which fits?",opts:["Bright red blood on wiping, painless","Painful lump at anus","Severe tearing pain with hard stool (fissure-like)","Itching mainly"]}],
  modern:[
@@ -923,7 +923,7 @@ conds: [
  tests:[], seeDoc:["Bleeding recurs beyond a week or heavy","Painful clotted lump (can be relieved quickly by a doctor)","Piles that come out and don't go back — procedures (banding etc.) are quick OPD fixes","Any bleeding + change in bowel habit or age >40 → colon check"],
  emerg:["Heavy continuous bleeding or dizziness","Black tarry stools"]},
 
-{id:"uti", nm:"Urine infection (UTI)", al:["uti","urine infection","burning urine","peshab me jalan","frequent urination","urine burning"],
+{id:"uti", rg:"pelvis", nm:"Urine infection (UTI)", al:["uti","urine infection","burning urine","peshab me jalan","frequent urination","urine burning","burning when i pee","burning when i urinate","burns when i pee","pee burns","painful peeing","hurts when i pee","frequent peeing","peeing a lot"],
  sys:"urinary", doctor:"General physician / urologist if recurrent",
  dq:[{q:"Any of these too?",opts:["Fever/chills","Back/flank pain","Blood in urine","Just burning + frequency"]}],
  modern:[
@@ -936,7 +936,7 @@ conds: [
  seeDoc:["Symptoms >48 h despite fluids (antibiotics likely needed)","Recurrent UTIs (urine culture + urologist)","Diabetic, male, child, pregnant, elderly — see doctor immediately"],
  emerg:["Fever with chills + back/flank pain (kidney infection)","Blood in urine","Unable to pass urine at all"]},
 
-{id:"period_pain", nm:"Period pain", al:["period pain","menstrual cramp","dysmenorrhea","period cramps","mahavari dard","periods me dard"],
+{id:"period_pain", rg:"pelvis", nm:"Period pain", al:["period pain","menstrual cramp","dysmenorrhea","period cramps","mahavari dard","periods me dard","cramps before my period"],
  sys:"womens", doctor:"Gynaecologist",
  modern:[
   {t:"Mefenamic acid 500 mg OR ibuprofen 400 mg AFTER FOOD, started AS SOON AS pain begins (works far better early), every 8 h for 1–2 days.", f:"nsaid"},
@@ -946,7 +946,7 @@ conds: [
  tests:[], seeDoc:["Severe pain every cycle or worsening over months","Pain with very heavy bleeding/clots","Pain outside periods too"],
  emerg:["Sudden severe one-sided lower abdominal pain (esp. if period missed — ectopic risk)","Fainting with heavy bleeding"]},
 
-{id:"back_pain", nm:"Back pain", al:["back pain","kamar dard","lower back","backache","peeth dard"],
+{id:"back_pain", rg:"back", nm:"Back pain", al:["back pain","kamar dard","lower back","backache","peeth dard"],
  sys:"musculo", doctor:"Orthopedician / physiotherapist",
  dq:[{q:"How did it start?",opts:["After lifting/bending/jerk","Gradually with sitting/posture","With leg pain/tingling below knee","After a fall/accident"]}],
  modern:[
@@ -959,7 +959,7 @@ conds: [
  seeDoc:["Not improving in 1–2 weeks","Pain radiating below the knee with tingling/numbness (sciatica — needs assessment)","Recurrent episodes (physio program)"],
  emerg:["Numbness in the saddle/genital area, or new urine/stool control problems — EMERGENCY (nerve compression)","Back pain after significant fall/accident","With fever, or night pain + weight loss"]},
 
-{id:"neck_pain", nm:"Neck pain / stiffness", al:["neck pain","gardan dard","stiff neck","cervical","neck stiffness"],
+{id:"neck_pain", rg:"neck", nm:"Neck pain / stiffness", al:["neck pain","gardan dard","stiff neck","cervical","neck stiffness"],
  sys:"musculo", doctor:"Orthopedician / physiotherapist",
  modern:[
   {t:"Keep gently mobile; avoid sudden jerks; thin pillow at proper height."},
@@ -970,7 +970,7 @@ conds: [
  tests:[], seeDoc:["Pain with arm tingling/numbness/weakness","Not improving in 1–2 weeks","Recurrent (posture/physio program)"],
  emerg:["Neck stiffness with FEVER + headache (meningitis)","After fall/accident","With weakness in limbs"]},
 
-{id:"sprain", nm:"Sprain / muscle strain / minor injury", al:["sprain","twist","moch","strain","ankle twist","muscle pull","injury"],
+{id:"sprain", rg:"limb", nm:"Sprain / muscle strain / minor injury", al:["sprain","twist","moch","strain","ankle twist","muscle pull","injury"],
  sys:"musculo", doctor:"Orthopedician",
  modern:[
   {t:"R.I.C.E for 48 h: Rest • Ice 20 min every 2–3 h (cloth-wrapped) • Compression (crepe bandage, snug not tight) • Elevation above heart level."},
@@ -981,7 +981,37 @@ conds: [
  tests:["injury"], seeDoc:["Not improving in 3–4 days","Joint feels unstable/gives way","Repeated sprains"],
  emerg:["Obvious deformity/severe swelling immediately","Cannot put any weight even after rest+ice","Numbness/cold/blue toes-fingers below injury"]},
 
-{id:"joint_pain", nm:"Joint pain (knee/arthritis type)", al:["joint pain","knee pain","ghutne dard","ghutna","arthritis","gathiya","joint stiffness"],
+/* Chest-wall pain needs its own entry. Routing it to "sprain" produced advice
+   that was irrelevant at best (elevate above heart level, bear weight, X-ray for
+   a rib cage) and harmful at worst: strapping or compressing a chest wall
+   restricts breathing and invites collapse of lung bases and pneumonia. */
+{id:"costochondritis", rg:"chest", nm:"Chest wall pain (costochondritis / muscle strain)",
+ al:["costochondritis","chest wall","rib pain","rib strain","sore ribs","chest muscle","pulled chest muscle",
+   "pain when i press on my chest","tender ribs","pasli dard","seene ki haddi"],
+ sys:"musculo", doctor:"General physician (orthopaedic only if injury-related)",
+ modern:[
+  {t:"Reassurance first: pain you can reproduce by pressing the spot, or by a particular movement, comes from the chest wall — muscle, cartilage or rib joint — not from the heart. It settles over 1–3 weeks, sometimes longer."},
+  {t:"Paracetamol 500–650 mg after food, up to 4×/day, is the safest first choice for the pain.", f:"pcm"},
+  {t:"If paracetamol isn't enough: ibuprofen 400 mg after food, 2–3×/day for a few days — but NOT if you have stomach ulcers or gastritis, kidney disease, asthma worsened by painkillers, are pregnant, or take blood thinners. Check with a pharmacist if unsure.", f:"nsaid"},
+  {t:"Warm compress over the sore area for 15 minutes, 2–3×/day, and avoid the specific movement that triggers it (overhead reaching, heavy lifting, push-ups) for a week or two."},
+  {t:"IMPORTANT — do NOT strap, tape or bind the chest. Binding restricts how deeply you can breathe, which lets the lung bases collapse and can turn a harmless strain into a chest infection. This is the opposite of how a sprained ankle is treated."},
+  {t:"Instead, take 10 slow deep breaths every couple of hours, even though it aches slightly. Keeping the chest expanding is what prevents complications."},
+  {t:"Keep moving normally otherwise — gentle activity aids recovery; complete rest stiffens it."}],
+ ayur:["Warm Mahanarayana or Murivenna oil, applied gently over the tender area twice daily, then a warm cloth over it.",
+   "Avoid deep pressure massage over the painful rib — light application only.",
+   "Turmeric ½ tsp with a pinch of black pepper in warm milk at night for inflammation support.",
+   "Rest the aggravating movement but continue normal breathing and walking; Vata is aggravated by both strain and complete immobility."],
+ tests:[],
+ seeDoc:["No better after 2–3 weeks, or getting worse rather than easing",
+   "It started after a significant fall or blow to the chest (rib fracture needs checking)",
+   "You are over 50, or have heart disease, diabetes or high blood pressure, and are unsure it's muscular",
+   "A cough that isn't settling, or you feel unwell with it"],
+ emerg:["Pain becomes crushing or heavy rather than sharp, or spreads to the jaw, neck or arm",
+   "Sweating, nausea, breathlessness or faintness with the pain",
+   "Sudden severe breathlessness, or pain worse on breathing in with breathlessness",
+   "Coughing blood, or a fever with the chest pain"]},
+
+{id:"joint_pain", rg:"limb", nm:"Joint pain (knee/arthritis type)", al:["joint pain","knee pain","ghutne dard","ghutna","arthritis","gathiya","joint stiffness"],
  sys:"musculo", doctor:"Orthopedician / rheumatologist",
  dq:[{q:"Which pattern fits?",opts:["Morning stiffness >30 min, multiple joints, swelling","Pain worse with activity, better with rest, age >45 (wear & tear)","Sudden hot red big-toe/foot joint (gout-like)","After minor injury/overuse"]}],
  modern:[
@@ -994,7 +1024,7 @@ conds: [
  seeDoc:["Multiple joints with morning stiffness (rheumatoid needs early treatment — very treatable now)","Recurring gout attacks","Pain limiting daily activity (X-ray + plan)"],
  emerg:["ONE joint suddenly hot, red, very painful ± fever → same-day doctor (infection in joint is an emergency)"]},
 
-{id:"cramps", nm:"Muscle cramps", al:["cramps","leg cramp","nas chadna","muscle cramp","charley horse","night cramps"],
+{id:"cramps", rg:"limb", nm:"Muscle cramps", al:["cramps","leg cramp","nas chadna","muscle cramp","charley horse","night cramps"],
  sys:"musculo", doctor:"General physician",
  modern:[
   {t:"During cramp: stretch the muscle firmly (pull toes up for calf) + massage."},
@@ -1004,7 +1034,7 @@ conds: [
  ayur:["Sesame-oil massage of legs at night (Vata pacification).","Milk + soaked almonds/sesame (natural calcium-magnesium); dates.","Ashwagandha 1/2 tsp with milk at night for recurrent cramps."],
  tests:[], seeDoc:["Frequent/severe or daytime cramps","With muscle weakness/wasting","On BP/diuretic medicines"], emerg:["Calf cramp-pain with one-sided swelling/warmth (clot risk) — urgent"]},
 
-{id:"rash", nm:"Skin rash / itching (eczema-type)", al:["rash","itching","khujli","skin allergy","eczema","dermatitis","itchy skin","daane"],
+{id:"rash", rg:"skin", nm:"Skin rash / itching (eczema-type)", al:["rash","itching","khujli","skin allergy","eczema","dermatitis","itchy skin","daane"],
  sys:"skin", doctor:"Dermatologist",
  dq:[{q:"Which looks closest?",opts:["Dry itchy patches","Oozing/wet patches","Ring-shaped patch with clear centre (fungal)","Raised wheals that come & go (hives)","Itching all over, worse at night, family itching too (scabies-like)"]}],
  modern:[
@@ -1017,7 +1047,7 @@ conds: [
  tests:[], seeDoc:["Spreading, oozing, painful, or crusted rash (may need prescription creams)","Rash not improving in 1–2 weeks","Scabies-suspect (whole-family treatment needed — doctor confirms)"],
  emerg:["Rash with fever that doesn't fade on glass pressure","Hives with lip/throat swelling or breathlessness","Painful rapidly-spreading red skin with fever"]},
 
-{id:"fungal", nm:"Fungal infection (ringworm/athlete's foot)", al:["fungal","ringworm","daad","dad khaj","athlete's foot","jock itch","itching groin","fungal infection"],
+{id:"fungal", rg:"skin", nm:"Fungal infection (ringworm/athlete's foot)", al:["fungal","ringworm","daad","dad khaj","athlete's foot","jock itch","itching groin","fungal infection"],
  sys:"skin", doctor:"Dermatologist",
  modern:[
   {t:"Clotrimazole or terbinafine cream: apply thin layer twice daily covering 2 cm BEYOND the ring edge; continue 2 WEEKS AFTER it looks cleared (total 3–4 weeks) — stopping early = relapse."},
@@ -1028,7 +1058,7 @@ conds: [
  tests:[], seeDoc:["Scalp or nail involvement (needs prescription tablets)","Widespread or recurring despite 4 weeks of correct cream","Diabetic with fungal infections (check sugar)"],
  emerg:[]},
 
-{id:"acne", nm:"Acne / pimples", al:["acne","pimple","pimples","muhase","keel","face spots"],
+{id:"acne", rg:"skin", nm:"Acne / pimples", al:["acne","pimple","pimples","muhase","keel","face spots"],
  sys:"skin", doctor:"Dermatologist",
  modern:[
   {t:"Benzoyl peroxide 2.5% gel thin layer at night on affected area (start alternate nights; mild dryness normal)."},
@@ -1038,7 +1068,7 @@ conds: [
  ayur:["Face pack: red sandalwood + turmeric pinch + rose water, 15 min, 3×/week; or multani mitti for oily skin.","Neem + turmeric water wash; don't over-dry the skin.","Triphala 1 tsp at night (gut-skin link); reduce fried/junk/excess dairy & sweets.","Kumkumadi taila few drops at night on old marks (not on active oily acne)."],
  tests:[], seeDoc:["Painful deep nodules or scarring","No improvement in 6–8 weeks","Sudden acne with irregular periods (hormonal check)"], emerg:[]},
 
-{id:"hives", nm:"Hives (urticaria)", al:["hives","urticaria","sheetpitta","wheals","welts","sudden itchy bumps"],
+{id:"hives", rg:"skin", nm:"Hives (urticaria)", al:["hives","urticaria","sheetpitta","wheals","welts","sudden itchy bumps"],
  sys:"skin", doctor:"Dermatologist / allergist",
  modern:[
   {t:"Cetirizine 10 mg once daily (doctor may advise up to twice daily) till clear + 3–4 days.", f:"sed"},
@@ -1049,7 +1079,7 @@ conds: [
  tests:[], seeDoc:["Episodes recurring >6 weeks","With joint pain/fever","Triggered by a medicine (note the name, tell every future doctor)"],
  emerg:["Lip/tongue/throat swelling, breathlessness, dizziness → EMERGENCY (anaphylaxis)"]},
 
-{id:"wound", nm:"Minor cut / wound / burn", al:["cut","wound","burn","jala","chot","ghav","scrape","bleeding cut","laceration"],
+{id:"wound", rg:"skin", nm:"Minor cut / wound / burn", al:["cut","wound","burn","jala","chot","ghav","scrape","bleeding cut","laceration"],
  sys:"skin", doctor:"General physician / ER for deep wounds",
  modern:[
   {t:"CUT: wash hands → run clean water over wound → press with clean cloth till bleeding stops → antiseptic (povidone-iodine) → dressing. Change daily."},
@@ -1060,7 +1090,7 @@ conds: [
  tests:[], seeDoc:["Gaping/deep cut (stitches work best within 6–8 h)","Animal/human bite (needs rabies protocol!)","Any infection signs","Diabetic with any foot wound — same day"],
  emerg:["Bleeding not stopping with 10 min firm pressure","Large/deep burn, face/hand/genital burn, electrical/chemical burn","Numbness or can't move the part"]},
 
-{id:"eye_red", nm:"Red / itchy eye", al:["red eye","eye pain","conjunctivitis","aankh lal","eye infection","itchy eyes","eye discharge"],
+{id:"eye_red", rg:"head", nm:"Red / itchy eye", al:["red eye","eye pain","conjunctivitis","aankh lal","eye infection","itchy eyes","eye discharge"],
  sys:"eye", doctor:"Ophthalmologist",
  dq:[{q:"Which fits?",opts:["Watery + itchy both eyes (allergy-like)","Sticky yellow discharge, lids stuck in morning","Gritty/dry feeling, screen-heavy day","Pain inside eye / vision affected"]}],
  modern:[
@@ -1073,7 +1103,7 @@ conds: [
  tests:[], seeDoc:["Not improving in 2–3 days","Recurring allergy (drops that prevent exist)","Any discharge in a newborn — same day"],
  emerg:["Eye PAIN (not just irritation), vision blur/loss, halos around lights, severe headache+vomiting","Chemical splash → wash 20 min & go","Injury/foreign body embedded"]},
 
-{id:"toothache", nm:"Toothache", al:["toothache","daant dard","tooth pain","dant","cavity pain","wisdom tooth"],
+{id:"toothache", rg:"head", nm:"Toothache", al:["toothache","daant dard","tooth pain","dant","cavity pain","wisdom tooth"],
  sys:"dental", doctor:"Dentist",
  modern:[
   {t:"Ibuprofen 400 mg after food (best for dental pain) ± paracetamol 650 mg in-between if severe (don't exceed either's max).", f:"nsaid"},
@@ -1084,7 +1114,7 @@ conds: [
  tests:[], seeDoc:["All toothache needs a dentist — within 1–2 days","Bleeding gums routinely (gum treatment + scaling)","Sensitivity persisting"],
  emerg:["Facial/jaw swelling, fever, difficulty opening mouth or swallowing → same-day emergency (spreading infection)"]},
 
-{id:"mouth_ulcer", nm:"Mouth ulcers", al:["mouth ulcer","muh me chala","chhala","canker sore","mouth sore","tongue ulcer"],
+{id:"mouth_ulcer", rg:"head", nm:"Mouth ulcers", al:["mouth ulcer","muh me chala","chhala","canker sore","mouth sore","tongue ulcer"],
  sys:"dental", doctor:"Dentist / physician if recurrent",
  modern:[
   {t:"Antiseptic/anaesthetic oral gel (choline salicylate or lidocaine-based) on ulcer 3–4×/day before food."},
@@ -1094,7 +1124,7 @@ conds: [
  tests:[], seeDoc:["Any single ulcer lasting >3 weeks (MUST be checked — cancer rule-out, esp. tobacco users)","Large/multiple recurrent crops (deficiency/other checks)","With eye/genital sores or joint pain"],
  emerg:[]},
 
-{id:"insomnia", nm:"Poor sleep (insomnia)", al:["insomnia","neend nahi","can't sleep","sleep problem","sleeplessness","no sleep"],
+{id:"insomnia", rg:"systemic", nm:"Poor sleep (insomnia)", al:["insomnia","neend nahi","can't sleep","sleep problem","sleeplessness","no sleep","can't fall asleep","cannot fall asleep","lying awake"],
  sys:"mental", doctor:"Physician / sleep specialist",
  modern:[
   {t:"Sleep hygiene (works better than pills): fixed wake time daily, no screens 1 h before bed, dark cool room, caffeine only before 2 pm, no daytime naps >20 min, bed = only for sleep."},
@@ -1106,7 +1136,7 @@ conds: [
  seeDoc:["Beyond 3–4 weeks or affecting daytime function","Loud snoring with breath pauses (sleep apnea — treatable)","With low mood/anxiety (treat the cause)"],
  emerg:["Sleeplessness with racing thoughts of self-harm → crisis help now"]},
 
-{id:"anxiety", nm:"Stress / anxiety", al:["anxiety","tension","stress","ghabrahat","panic","worry","chinta","restless"],
+{id:"anxiety", rg:"systemic", nm:"Stress / anxiety", al:["anxiety","tension","stress","ghabrahat","panic","worry","chinta","restless"],
  sys:"mental", doctor:"Psychiatrist / psychologist",
  modern:[
   {t:"Slow breathing NOW: inhale 4s – hold 4s – exhale 6-8s × 10 rounds (physiologically lowers the alarm)."},
@@ -1118,7 +1148,7 @@ conds: [
  seeDoc:["Symptoms >2–4 weeks or worsening","Panic attacks","With palpitations/weight change (thyroid check)"],
  emerg:["Chest pain + sweating + breathlessness — rule out heart FIRST, don't assume anxiety","Thoughts of self-harm → crisis line now (India: 9152987821 / 14416)"]},
 
-{id:"dandruff", nm:"Dandruff / hair fall", al:["dandruff","hair fall","hairfall","balo ka girna","rusi","hair loss","itchy scalp"],
+{id:"dandruff", rg:"head", nm:"Dandruff / hair fall", al:["dandruff","hair fall","hairfall","balo ka girna","rusi","hair loss","itchy scalp"],
  sys:"skin", doctor:"Dermatologist",
  modern:[
   {t:"Ketoconazole 2% shampoo twice weekly (lather, LEAVE 5 min, rinse) × 4 weeks, then weekly maintenance; normal shampoo other days."},
@@ -1129,7 +1159,7 @@ conds: [
  tests:["chronic_fatigue","anemia_suspect"],
  seeDoc:["Patchy coin-shaped bald spots (alopecia areata — treatable, see derm early)","Scarring/painful scalp","Sudden diffuse shedding continuing >6 months"], emerg:[]},
 
-{id:"sugar_query", nm:"High sugar / diabetes concern", al:["diabetes","sugar","blood sugar","madhumeh","sugar high","hba1c","excess thirst urination"],
+{id:"sugar_query", rg:"systemic", nm:"High sugar / diabetes concern", al:["diabetes","sugar","blood sugar","madhumeh","sugar high","hba1c","excess thirst urination"],
  sys:"chronic", doctor:"Physician / diabetologist",
  modern:[
   {t:"Get tested rather than guess: fasting + post-meal sugar and HbA1c (any lab, ~no doctor needed for the test)."},
@@ -1141,7 +1171,7 @@ conds: [
  seeDoc:["Any confirmed high reading → physician for full plan","Existing diabetic with sugars out of range","Numb feet, blurred vision, non-healing wounds (complication screening)"],
  emerg:["Very high sugar with vomiting/rapid breathing/drowsiness","Sweating/shaking/confusion (LOW sugar — give sugar/glucose immediately if conscious)"]},
 
-{id:"bp_query", nm:"High blood pressure concern", al:["bp","blood pressure","hypertension","high bp","bp high"],
+{id:"bp_query", rg:"systemic", nm:"High blood pressure concern", al:["bp","blood pressure","hypertension","high bp","bp high"],
  sys:"chronic", doctor:"Physician / cardiologist",
  modern:[
   {t:"Measure properly: seated, rested 5 min, arm supported — twice daily × 1 week (home machine/pharmacy). One reading ≠ diagnosis."},
@@ -1152,7 +1182,7 @@ conds: [
  tests:[], seeDoc:["Repeated readings ≥140/90","Already on medicines but uncontrolled","BP high in pregnancy — urgent"],
  emerg:["≥180/120 with headache/chest pain/vision change/breathlessness → EMERGENCY","BP high + one-sided weakness/slurred speech → stroke protocol"]},
 
-{id:"weight", nm:"Weight management", al:["weight loss","obesity","motapa","weight gain","fat loss","overweight"],
+{id:"weight", rg:"systemic", nm:"Weight management", al:["weight loss","obesity","motapa","weight gain","fat loss","overweight"],
  sys:"chronic", doctor:"Physician / dietitian",
  modern:[
   {t:"Target 0.5 kg/week: ~500 kcal daily deficit. Protein at every meal (dal/paneer/eggs/curd) — controls hunger."},
@@ -1163,7 +1193,7 @@ conds: [
  tests:["chronic_fatigue","sugar_suspect"],
  seeDoc:["BMI ≥30 or weight-related symptoms (structured program)","Unexplained rapid weight change either way (thyroid etc.)"], emerg:[]},
 
-{id:"fatigue", nm:"Weakness / tiredness", al:["weakness","fatigue","tired","kamzori","thakan","low energy","always tired"],
+{id:"fatigue", rg:"systemic", nm:"Weakness / tiredness", al:["weakness","fatigue","tired","kamzori","thakan","low energy","always tired"],
  sys:"general", doctor:"General physician",
  modern:[
   {t:"Get the basic 5 tests (very often one is the answer): CBC (anaemia), TSH (thyroid), fasting sugar, Vitamin D, B12."},
@@ -1174,7 +1204,7 @@ conds: [
  seeDoc:["Tiredness >2–3 weeks despite sleep & food fixes → test, don't guess","With breathlessness on stairs, pale nails (anaemia)","With weight change/cold intolerance (thyroid)"],
  emerg:["Sudden severe weakness one side of body","Fainting spells","Breathlessness at rest"]},
 
-{id:"generic", nm:"General health concern", al:[],
+{id:"generic", rg:"systemic", nm:"General health concern", al:[],
  sys:"general", doctor:"General physician",
  modern:[
   {t:"From what you've told me, this doesn't cleanly match a common quick-fix pattern — and guessing would be bad medicine."},
@@ -1184,4 +1214,4 @@ conds: [
  tests:[], seeDoc:["If it persists beyond 3–5 days, worsens, or worries you — see a physician; carry your symptom notes"],
  emerg:["Any red-flag symptom listed at the end of this report"]}
 ]};
-const DB_PAIN_MAP = {head:["headache","migraine"], eyes:["eye_red"], ear:["earache"], throat:["sore_throat","cold"], chest:["CHEST_SPECIAL"], upabd:["acidity","indigestion","stomach_pain"], lowabd:["uti","period_pain","constipation","stomach_pain"], back:["back_pain"], joints:["joint_pain","sprain"], muscles:["cramps","fatigue","flu"], skin:["rash","fungal","hives","wound"], urinary:["uti"], teeth:["toothache","mouth_ulcer"]};
+const DB_PAIN_MAP = {head:["headache","migraine"], eyes:["eye_red"], ear:["earache"], throat:["sore_throat","cold"], chest:["CHEST_SPECIAL","costochondritis"], upabd:["acidity","indigestion","stomach_pain"], lowabd:["uti","period_pain","constipation","stomach_pain"], back:["back_pain"], joints:["joint_pain","sprain"], muscles:["cramps","fatigue","flu"], skin:["rash","fungal","hives","wound"], urinary:["uti"], teeth:["toothache","mouth_ulcer"]};
