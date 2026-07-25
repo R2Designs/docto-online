@@ -9,5 +9,5 @@ window.DOCTO_CONFIG = {
   /* Optional smart free-text fallback. Deploy worker.js to Cloudflare (free),
      then paste its URL here, e.g. "https://docto-llm.YOURNAME.workers.dev".
      Leave "" to run purely on the built-in rule engine. */
-  LLM_ENDPOINT: ""
+  LLM_ENDPOINT: "https://docto-llm.abhishekraj4300.workers.dev"
 };
