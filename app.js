@@ -2,6 +2,7 @@
 "use strict";
 const CONFIG = {
   GOOGLE_CLIENT_ID: (window.DOCTO_CONFIG && window.DOCTO_CONFIG.GOOGLE_CLIENT_ID) || "", // set this in config.js
+  LLM_ENDPOINT: (window.DOCTO_CONFIG && window.DOCTO_CONFIG.LLM_ENDPOINT) || "",
   TESS: "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js",
   PDFJS: "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js",
   PDFWK: "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js"
@@ -115,10 +116,24 @@ async function emergencyStop(id){
 }
 
 /* ---------------- condition matching ---------------- */
+function editLe1(a,b){ // true if edit distance <= 1
+  if(a===b) return true; if(Math.abs(a.length-b.length)>1) return false;
+  let i=0,j=0,d=0;
+  while(i<a.length && j<b.length){
+    if(a[i]===b[j]){i++;j++;continue;}
+    if(++d>1) return false;
+    if(a.length>b.length) i++; else if(b.length>a.length) j++; else {i++;j++;}
+  }
+  return d+(a.length-i)+(b.length-j)<=1;
+}
 function scoreConditions(){
   const text=S.complaint.toLowerCase(); const sc={};
+  const toks=text.split(/[^a-z0-9]+/).filter(x=>x.length>=4);
   DB.conds.forEach(c=>{ let s=0;
-    c.al.forEach(a=>{ if(text.includes(a)) s+=a.length>4?3:2; });
+    c.al.forEach(a=>{
+      if(text.includes(a)) { s+=a.length>4?3:2; return; }
+      if(a.length>=5 && !a.includes(" ") && toks.some(tk=>editLe1(tk,a))) s+=2; // typo-tolerant ("hedache","khaansi")
+    });
     sc[c.id]=s; });
   S.pains.forEach(p=>{ (DB_PAIN_MAP[p]||[]).forEach(cid=>{ if(cid!=="CHEST_SPECIAL") sc[cid]=(sc[cid]||0)+2; }); });
   if(S.temp && S.temp>=100.4){ sc.fever=(sc.fever||0)+2; sc.flu=(sc.flu||0)+1; }
@@ -173,9 +188,37 @@ function pickTests(){
   return out;
 }
 
+/* ---------------- optional LLM fallback (free-text edge cases) ---------------- */
+async function llmClassify(text){
+  if(!CONFIG.LLM_ENDPOINT) return null;
+  try{
+    const key="docto_llm_"+text.toLowerCase().trim().replace(/\s+/g," ").slice(0,90);
+    const cached=localStorage.getItem(key); if(cached) return JSON.parse(cached);
+    const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),6000);
+    const resp=await fetch(CONFIG.LLM_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({text,
+        conds:DB.conds.filter(c=>c.id!=="generic").map(c=>c.id+"="+c.nm),
+        flags:Object.keys(DB.emergencyAdvice)}),
+      signal:ctrl.signal});
+    clearTimeout(to);
+    if(!resp.ok) return null;
+    const j=await resp.json();
+    if(j && (j.id||j.red_flag)){ try{localStorage.setItem(key,JSON.stringify(j));}catch(e){} return j; }
+  }catch(e){ /* offline or worker down — rule engine continues alone */ }
+  return null;
+}
+
 /* ---------------- assessment ---------------- */
 async function assess(){
   S.cond = scoreConditions();
+  if(confidence()==="Preliminary"){           // weak rule-match → ask the LLM router (fallback only)
+    const r=await llmClassify(S.complaint);
+    if(r){
+      if(r.red_flag && DB.emergencyAdvice[r.red_flag]){ await emergencyStop(r.red_flag); return; }
+      const c2=DB.conds.find(c=>c.id===r.id);
+      if(c2 && c2.id!=="generic"){ S.cond=c2; S.scores[c2.id]=(S.scores[c2.id]||0)+4; S.llmUsed=true; }
+    }
+  }
   const c=S.cond, conf=confidence();
   let html=sec("s-assess","activity",t("assess_title"))+`<div class="badges"><span class="badge prim">${t("likely")}: <b>${esc(c.nm)}</b></span><span class="badge">${t("confidence")}: ${esc(conf)}</span></div>`;
   if(S.temp>=103) html+=`<div class="emg">Temperature ${S.temp}°F is high — start the fever plan now and see a doctor today if it doesn't come down.</div>`;

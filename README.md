@@ -47,6 +47,11 @@ python3 -m http.server 8000
 - Every medicine has dose ceilings; personalised contraindication filtering; persistent disclaimer; emergency + suicide-prevention numbers (India 108/102; 9152987821; Tele-MANAS 14416).
 - All data stays in the user's browser (localStorage) — nothing is uploaded; OCR runs on-device.
 
+## Smart free-text fallback (optional, ₹0)
+The built-in rule engine handles most complaints (now typo-tolerant too). For odd phrasings, an optional LLM "router" can be enabled — it only classifies the complaint into one of the app's condition IDs / red flags (never generates advice), fires **only when the rule engine is unsure**, and caches results locally.
+
+Setup (free): 1) Get a free Gemini API key at aistudio.google.com. 2) Cloudflare → Workers → create a worker, paste `worker.js`, deploy. 3) Add secret variable `GEMINI_KEY` with your key. 4) Paste the worker URL into `config.js → LLM_ENDPOINT`. Add your live domain to `ALLOWED_ORIGINS` in worker.js if it differs. Costs: Cloudflare free tier (100k req/day) + Gemini free tier — ₹0 at small scale; even on paid Gemini/Claude Haiku pricing, ~30k+ classifications per $1.
+
 ## Notes / possible next steps
 - Voice input, more languages, and a shareable report link are easy add-ons.
 - To make diagnosis smarter for free-text edge cases, an optional Claude/LLM call could be slotted into `flow()` — the app is designed to work fully **without** it (as requested).
