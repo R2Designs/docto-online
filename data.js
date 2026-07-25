@@ -83,6 +83,190 @@ redFlagPatterns: [
    ["not passing urine","no urine","very little urine","peshab nahi","dizzy when standing",
     "dizzy on standing","cannot keep anything down","sunken eyes","very weak","dry mouth and dizzy"]
  ]},
+ /* ---------- neurological ---------- */
+ {id:"head_injury", need:[
+   ["hit in the head","hit on the head","head injury","struck the head","hit his head","hit her head",
+    "lost consciousness","knocked out","blow to the head","fell and hit"],
+   ["somnolent","very drowsy","extremely drowsy","hard to wake","won't wake","cannot wake","vomit",
+    "pupil is larger","one pupil","unequal pupil","confus","seizure","getting worse"]
+ ]},
+ {id:"subdural", need:[
+   ["bumped his head","bumped her head","bumped my head","hit his head","hit her head","head injury","fell",
+    "knocked his head","knocked her head"],
+   ["weeks ago","days ago","last week","two weeks","a month ago","since then"],
+   ["confus","unsteady","off balance","worsening headache","getting worse","drowsy","not himself","not herself",
+    "memory","dementia","slower"]
+ ]},
+ {id:"tia", need:[
+   ["arm went weak","arm was weak","face droop","speech was slurred","slurred speech","couldn't speak",
+    "vision went","numbness on one side","weakness on one side"],
+   ["went away","resolved","back to normal","completely normal","lasted about","for about 15 minutes",
+    "for a few minutes","for 10 minutes","for 20 minutes","temporar"]
+ ]},
+ {id:"myasthenic_crisis", need:[
+   ["myasthenia","myasthenic"],
+   ["droop","nasal","swallow","breath","weak","choking"]
+ ]},
+ {id:"spinal_abscess", need:[
+   ["back pain","mid-back","spine pain","lower back"],
+   ["fever","102","101","103","chills","infection"],
+   ["legs feel weak","leg weakness","weak when walking","heavy when walking","cannot walk","numb","iv drug",
+    "inject","bladder"]
+ ]},
+ /* ---------- cardiovascular ---------- */
+ {id:"cardiac", need:[
+   ["upper stomach","upper abdomen","epigastr","indigestion","heartburn","belching","burping"],
+   ["sweating heavily","sweating","clammy","cold sweat","dizzy","short of breath","antacid didn't work",
+    "antacid did not work","pressure","crushing","heavy feeling"]
+ ]},
+ {id:"tamponade", need:[
+   ["pericarditis","fluid around my heart","pericardial"],
+   ["weak","heart is racing","racing heart","lightheaded","dizzy","neck veins","short of breath","swollen neck"]
+ ]},
+ {id:"limb_ischemia", need:[
+   ["leg","arm","foot","hand","toes","fingers"],
+   ["cold to the touch","cold and pale","pale","white","blue","no pulse","cannot feel my toes",
+    "barely feel my toes","cannot wiggle","barely feel"],
+   ["sudden","suddenly","painful","severe pain","numb"]
+ ]},
+ /* ---------- abdominal ---------- */
+ {id:"perforation", need:[
+   ["hard as a board","board-like","board like","rigid","stomach feels hard","belly is hard","tender to touch",
+    "hurts to even touch","hurts to move"],
+   ["sudden","suddenly","severe","sharp","intense"]
+ ]},
+ {id:"pancreatitis", need:[
+   ["upper abdomen","upper belly","upper stomach","epigastr"],
+   ["radiates to my back","through to my back","goes to my back","into my back","straight to my back"],
+   ["severe","burning","boring","deep","worse when i lie","better leaning","drinking","alcohol","gallstone","vomit"]
+ ]},
+ {id:"hernia_strangulated", need:[
+   ["hernia","bulge","lump in my groin","swelling in my groin"],
+   ["purple","dark","black","won't push back","will not push back","cannot push it back","stuck","irreducible",
+    "intensely painful","very painful","vomit","throwing up"]
+ ]},
+ {id:"cholangitis", need:[
+   ["gallstone","gall bladder","gallbladder","bile duct","right upper"],
+   ["fever","chills","rigors"],
+   ["yellow","jaundice","eyes look yellow","dark urine","pale stool","severe pain"]
+ ]},
+ {id:"splenic_rupture", need:[
+   ["mono","mononucleosis","glandular fever","epstein","enlarged spleen","spleen"],
+   ["upper left","upper-left","left upper","left shoulder","left side"],
+   ["pain","bumped","knock","injury","hit"]
+ ]},
+ {id:"intussusception", need:[
+   ["month-old","months old","month old","baby","infant","toddler","my son is","my daughter is","8-month","6-month"],
+   ["crying inconsolably","inconsolable","drawing his knees","pulling his knees","pulling her knees","knees up to his chest",
+    "knees up to her chest","screaming in waves","comes in waves"],
+   ["lethargic","floppy","vacant","jelly","redcurrant","red jelly","dark red stool","blood in the nappy","blood in the diaper"]
+ ]},
+ {id:"pyloric_stenosis", need:[
+   ["newborn","week-old","weeks old","week old","3-week","baby boy","infant"],
+   ["projectile","forcefully","forceful","across the room","shoots out"],
+   ["vomit","throwing up","after every feed","after each feed","after feeding"]
+ ]},
+ /* ---------- respiratory ---------- */
+ {id:"pneumothorax", need:[
+   ["chest"],
+   ["sudden sharp","sharp pain","stabbing"],
+   ["short of breath","breathless","gasping","cannot breathe","blue lips","lips look blue","hard to breathe"]
+ ]},
+ {id:"asthma_severe", need:[
+   ["asthma","inhaler","nebuli"],
+   ["not working","isn't working","no relief","after 6 puffs","after six puffs","still cannot breathe"],
+   ["one or two words","few words at a time","cannot finish a sentence","gasping","sucked in","ribs are pulling",
+    "chest is sucked","struggling to breathe"]
+ ]},
+ {id:"epiglottitis", need:[
+   ["drool","cannot swallow my saliva","can't swallow my saliva","swallowing my own saliva","spitting into a cup",
+    "leaning forward","tripod","chin sticking out","hot potato","muffled voice","stridor","squeaking noise"],
+   ["sore throat","throat","fever","swallow","breathe","voice"]
+ ]},
+ /* ---------- obstetric & gynae ---------- */
+ {id:"abruption", need:[
+   ["pregnant","weeks pregnant","garbh","pregnancy"],
+   ["rock-hard","rock hard","hard abdomen","tense abdomen","constant pain","continuous pain","severe uterine pain",
+    "bleeding","dark blood","dark vaginal"]
+ ]},
+ {id:"ovarian_torsion", need:[
+   ["ovarian cyst","ovary","ovarian"],
+   ["sudden","suddenly","agonis","agoniz","severe pain","sharp waves","comes in waves"],
+   ["lower right","lower left","lower abdomen","pelvi","one side"]
+ ]},
+ {id:"pid_severe", need:[
+   ["pelvic pain","lower abdomen","lower belly","pelvis"],
+   ["foul-smelling","foul smelling","bad smelling discharge","offensive discharge","discharge"],
+   ["fever","102","101","103","severe","chills"]
+ ]},
+ /* ---------- toxicology ---------- */
+ {id:"paracetamol_od", need:[
+   ["tylenol","paracetamol","acetaminophen","crocin","dolo"],
+   ["whole bottle","overdose","too many","a lot of pills","handful","took all","20 tablets","entire bottle"]
+ ]},
+ {id:"digoxin_tox", need:[
+   ["digoxin","lanoxin","digitalis"],
+   ["nausea","weak","yellow","green tint","halo","vision","slow heart","skipping"]
+ ]},
+ {id:"lithium_tox", need:[
+   ["lithium"],
+   ["shaking","tremor","slurred","unsteady","ringing in","confus","vomit","diarrhea","diarrhoea","twitch"]
+ ]},
+ {id:"opioid_od", need:[
+   ["won't wake","will not wake","cannot wake","unresponsive","not waking","passed out","took some pills",
+    "heroin","fentanyl","oxycodone","tramadol","opioid","morphine"],
+   ["breathing is very slow","slow breathing","shallow breathing","barely breathing","pinpoint","tiny pupils",
+    "blue lips","4 breaths","few breaths a minute"]
+ ]},
+ {id:"last_toxicity", need:[
+   ["lidocaine","lignocaine","local anaesthetic","local anesthetic","dental injection","numbing injection"],
+   ["tongue feels numb","metallic","ringing in my ears","tinnitus","dizzy","fluttering","twitch","seizure"]
+ ]},
+ /* ---------- endocrine, renal, metabolic ---------- */
+ {id:"adrenal_crisis", need:[
+   ["addison","adrenal insufficiency","steroid dependent","hydrocortisone","adrenal"],
+   ["vomit","dizzy","weak","collapse","low blood pressure","stomach hurts","abdominal pain","cannot keep"]
+ ]},
+ {id:"hypoglycemia", need:[
+   ["insulin","diabet","sugar","cgm","glucose"],
+   ["forgot to eat","skipped a meal","missed dinner","did not eat","reads low","very low","hypo"],
+   ["shaking","sweating","confus","double vision","dizzy","cold sweat","faint","trembl"]
+ ]},
+ {id:"hyperkalemia", need:[
+   ["dialysis","kidney failure","renal failure","potassium"],
+   ["missed","skipped","did not go","couldn't go"],
+   ["muscle","weak","tingling","skipping beats","palpitation","heart feels","irregular"]
+ ]},
+ {id:"rhabdo", need:[
+   ["muscle","thigh","calf","shoulders","arms"],
+   ["dark urine","dark tea","tea colour","tea color","cola","brown urine","coke coloured","coke colored"],
+   ["pain","sore","swollen","ache","workout","exercise","gym","cycling","spin class"]
+ ]},
+ {id:"malignant_hyperthermia", need:[
+   ["after surgery","anaesthesia","anesthesia","recovery after","operation","general anaesthetic"],
+   ["temperature","fever","104","105","spiked"],
+   ["rigid","stiff muscles","muscles are extremely","heart rate","racing"]
+ ]},
+ /* ---------- infectious & haematological ---------- */
+ {id:"neutropenic_fever", need:[
+   ["chemotherapy","chemo","immunosuppress","transplant","neutropenic","cancer treatment"],
+   ["fever","temperature","101","100.","102","103"]
+ ]},
+ {id:"sickle_crisis", need:[
+   ["sickle"],
+   ["pain","crisis","chest","legs","arms","back"]
+ ]},
+ /* ---------- eye & environmental ---------- */
+ {id:"crao", need:[
+   ["lost vision","loss of vision","went dark","cannot see","blind","vision gone","no vision"],
+   ["sudden","suddenly","instantly","this morning","woke up"],
+   ["one eye","left eye","right eye","in that eye"]
+ ]},
+ {id:"heat_stroke", need:[
+   ["hot day","heat","marathon","in the sun","working outside","heatwave"],
+   ["stopped sweating","hot and dry","dry skin","not sweating"],
+   ["confus","slurring","collapse","unconscious","drowsy","disorient"]
+ ]},
  /* Thyroid storm — known hyperthyroidism plus a trigger and systemic upset.
     Almost always self-explained as "just a stomach bug" or "just anxiety". */
  {id:"thyroid_storm", need:[
@@ -122,9 +306,34 @@ redFlagPatterns: [
  ]},
  /* Necrotising soft-tissue infection — pain out of proportion, spreading fast */
  {id:"nec_fasc", need:[
-   ["pain out of proportion","pain much worse than it looks","excruciating skin pain","spreading redness",
-    "redness spreading","red line spreading","dusky","blister","skin turning purple","skin turning black"],
-   ["fever","very unwell","feel terrible","chills","rapidly","fast","by the hour"]
+   ["spreading redness","redness spreading","red line spreading","dusky","blister","purplish","purple-black",
+    "skin turning purple","skin turning black","black patch","bright red and hot","hot to touch"],
+   ["pain out of proportion","out of proportion","far worse","much worse than it looks","excruciating",
+    "unbearable pain","fever","very unwell","feel terrible","chills","rapidly","spreading fast","by the hour"]
+ ]},
+ /* Frank rectal bleeding — phrased a hundred ways, all of them urgent */
+ {id:"gi_bleed", need:[
+   ["blood in my stool","blood in the stool","bright red blood","rectal bleeding","passed blood","blood when i pass",
+    "blood in my motion","blood in the toilet","bleeding from the back","maroon stool","black tarry"],
+   ["stool","motion","poo","bowel","rectal","toilet","blood"]
+ ]},
+ /* Anaphylaxis — allergen exposure plus skin and airway together */
+ {id:"anaphylaxis", need:[
+   ["hives","welts","urticaria","lips swelled","lip swelling","face swelled","swollen lips","swollen face",
+    "throat closing","tongue swelling"],
+   ["wheez","cough","short of breath","breathing","throat","dizzy","faint","vomit","collaps"]
+ ]},
+ /* New-onset diabetes tipping into DKA — the child has no diagnosis yet, so
+    nothing in the text says "diabetes". The fruity breath is the giveaway. */
+ {id:"dka", need:[
+   ["fruity","sweet smell","smells like fruit","smells like nail polish","acetone","pear drops"],
+   ["breath"]
+ ]},
+ {id:"dka", need:[
+   ["drinking lots of water","drinking tons of water","drinking a lot of water","very thirsty","always thirsty",
+    "wetting the bed","bedwetting","passing lots of urine","peeing all the time","losing weight"],
+   ["breathing heavily","breathing fast","breathing rapidly","deep breathing","vomit","very tired","extremely tired",
+    "lethargic","drowsy","confus"]
  ]},
  /* Compartment syndrome — after injury or a tight cast */
  {id:"compartment", need:[
@@ -226,6 +435,49 @@ emergencyAdvice: {
  dehydration:"Repeated loose stools or vomiting with very little urine, dizziness on standing, or an inability to keep fluids down means significant dehydration. Start ORS in small frequent sips right away, and go to a hospital — you may need IV fluids, especially if this is a child or an elderly person.",
  preeclampsia:"In pregnancy, a persistent headache, blurred vision or seeing spots, sudden swelling of the face or hands, or pain under the ribs can signal pre-eclampsia. Go to your maternity hospital now for a blood-pressure and urine check — this can progress quickly.",
  poison:"Suspected poisoning/overdose/bite — emergency now. Do not induce vomiting.",
+ /* ---- neurological ---- */
+ subdural:"A head bump days or weeks ago followed by creeping confusion, unsteadiness and a worsening headache is the classic picture of a chronic subdural haematoma — a slow bleed pressing on the brain. In older people it is very often mistaken for dementia, and unlike dementia it is treatable, usually by draining the blood. Blood thinners make it far more likely. Go to a hospital today and ask for an urgent CT head; mention the injury even though it seems too long ago to matter.",
+ tia:"Weakness or slurred speech that fully resolved was very likely a TIA — a warning stroke. Going back to normal is not reassurance: the risk of a full stroke is highest in the next 48 hours, and treatment started now prevents a large proportion of them. Go to an emergency department today, not next week. Do not drive yourself. Do not start or stop any medicine on your own, but take your medicine list with you.",
+ myasthenic_crisis:"Worsening droop and nasal speech with difficulty swallowing your own saliva and taking a deep breath means the muscles you breathe with are failing — a myasthenic crisis. Breathing can fail suddenly and without warning. Call an ambulance now; do not drive or wait for your next clinic appointment. Tell them clearly that you have myasthenia gravis, since several common drugs (certain antibiotics, magnesium) make it worse.",
+ head_injury:"Knocked out, then seemingly fine, and now drowsy or vomiting with one pupil bigger than the other — that lucid interval followed by deterioration is the pattern of bleeding inside the skull. This is a surgical emergency measured in minutes to an hour. Call an ambulance NOW. Do not let him sleep it off, do not drive him yourself if an ambulance is available, keep him still, and give nothing to eat or drink.",
+ spinal_abscess:"Localised back pain with fever, and now leg weakness, points to an infection collecting around the spinal cord — a spinal epidural abscess. Injecting drug use raises the risk substantially. Once weakness starts, permanent paralysis can follow within hours. Go to an emergency department NOW and ask for an urgent MRI of the spine. Tell them honestly about injection use — it changes what they look for, and they have heard it before.",
+ /* ---- cardiovascular ---- */
+ tamponade:"Recent pericarditis with weakness, a racing heart, lightheadedness on sitting up and distended neck veins suggests fluid compressing the heart — cardiac tamponade. The heart cannot fill properly and this deteriorates quickly. Call an ambulance now. Stay sitting up if that's more comfortable, and do not take extra fluid tablets or painkillers to manage it at home.",
+ limb_ischemia:"A limb that is suddenly painful, cold, pale and numb has lost its blood supply — acute limb ischaemia. Muscle and nerve begin dying within about six hours, and the limb itself is at risk. Go to an emergency department NOW, ideally one with vascular surgery. Keep the leg at or below heart level, keep it warm but never apply direct heat or ice, and do not massage or elevate it.",
+ /* ---- abdominal ---- */
+ perforation:"Sudden severe abdominal pain with a board-hard belly that hurts to touch or move, especially on regular anti-inflammatory painkillers, suggests a perforated ulcer — a hole in the stomach or bowel wall. This needs emergency surgery. Go to hospital NOW. Nothing to eat or drink, no more anti-inflammatories, and no painkillers at all before assessment.",
+ pancreatitis:"Severe boring pain in the upper abdomen going straight through to the back, worse lying flat and better leaning forward, after heavy alcohol or with gallstones, is acute pancreatitis. It needs hospital fluids and monitoring — it can become severe fast. Go to an emergency department now. Nothing by mouth, including water, and no alcohol.",
+ hernia_strangulated:"A hernia that has turned purple, become intensely painful, will not push back in, and is accompanied by vomiting is strangulated — its blood supply is cut off and the trapped bowel is dying. This needs emergency surgery within hours. Go to hospital NOW. Do not keep trying to push it back in, apply no heat, and take nothing by mouth.",
+ cholangitis:"Fever with chills, severe right upper abdominal pain and yellow eyes is ascending cholangitis — an infected, blocked bile duct. It can progress to septic shock rapidly and usually needs an urgent drainage procedure. Go to an emergency department NOW; antibiotics alone at home will not fix a blocked duct.",
+ splenic_rupture:"Severe upper-left abdominal pain after even a minor knock, especially with pain referred to the left shoulder tip, in someone with recent glandular fever, suggests a ruptured spleen — the spleen is enlarged and fragile for weeks after mono. This is internal bleeding. Call an ambulance now, lie still, and take nothing by mouth.",
+ intussusception:"A baby crying inconsolably in waves with knees drawn up, going floppy or vacant between episodes, and passing dark red jelly-like stool, is intussusception — one part of the bowel telescoping into another. The stool appearance is a late and serious sign. Go to a children's emergency department NOW. Nothing to eat or drink on the way. It is usually fixed without surgery if treated early.",
+ pyloric_stenosis:"Forceful projectile vomiting after every feed in a baby of a few weeks old, who is hungry again immediately afterwards, is pyloric stenosis — the stomach outlet has thickened and closed. Babies dehydrate and lose vital salts quickly. Go to a children's emergency department today. It is corrected with a straightforward operation.",
+ /* ---- respiratory ---- */
+ pneumothorax:"Sudden sharp one-sided chest pain with severe breathlessness — particularly in a tall, thin young person — suggests a collapsed lung. Blue lips means it is severe and may be under tension, which is immediately life-threatening. Call an ambulance NOW. Sit upright, do not lie flat, and do not attempt to travel by air.",
+ asthma_severe:"Only being able to speak one or two words at a time, no relief after repeated inhaler puffs, and the chest sucking in under the ribs are signs of a severe, life-threatening asthma attack. Call an ambulance NOW. Keep sitting upright, and keep taking the reliever inhaler — 4 to 10 puffs through a spacer, one puff at a time, repeated every 20 minutes while waiting. Do not lie down and do not go anywhere alone.",
+ epiglottitis:"Severe throat pain with drooling because swallowing hurts too much, a muffled 'hot potato' voice, fever, and sitting upright leaning forward to breathe, is epiglottitis — the airway is swelling shut. Call an ambulance NOW. Do not lie the person down, do not try to look inside the throat or press the tongue down, and keep a child calm and upright on a parent's lap — distress can close the airway completely.",
+ /* ---- obstetric & gynae ---- */
+ abruption:"Constant severe abdominal pain with a rock-hard uterus and dark vaginal bleeding in later pregnancy is placental abruption — the placenta separating from the womb. Both mother and baby are at immediate risk, and the visible bleeding badly understates the blood lost. Call an ambulance now and go to the maternity unit, not a general clinic. Lie on your left side and take nothing by mouth.",
+ ovarian_torsion:"Sudden agonising one-sided lower abdominal pain coming in waves with vomiting, especially with a known ovarian cyst, suggests ovarian torsion — the ovary has twisted on its blood supply. The ovary can be saved if untwisted within hours. Go to an emergency department NOW and ask specifically for a pelvic ultrasound with Doppler. Nothing to eat or drink, in case surgery is needed.",
+ pid_severe:"Pelvic pain with a high fever, foul-smelling discharge and severe pain on movement suggests a serious pelvic infection, possibly an abscess. This needs intravenous antibiotics and imaging, not tablets at home, and untreated it threatens future fertility. Go to a hospital with gynaecology cover today.",
+ /* ---- toxicology ---- */
+ paracetamol_od:"Feeling well after a paracetamol overdose is the trap — liver damage is silent for the first day or two and becomes irreversible before you feel truly ill. Nausea and right upper abdominal pain at 24 hours means it has started. The antidote works best early but is still worth giving now. Go to an emergency department IMMEDIATELY and tell them how much you took and when. This is treatable, and going in now genuinely changes the outcome.",
+ digoxin_tox:"Nausea, weakness and a yellow-green tinge or halos around what you look at are classic digoxin toxicity. It disturbs heart rhythm dangerously and is often triggered by dehydration or kidney changes. Go to an emergency department now, take the digoxin box with you, and skip today's dose until a doctor advises.",
+ lithium_tox:"Coarse hand tremor, slurred speech, unsteadiness and ringing in the ears after several days of diarrhoea is lithium toxicity — fluid loss concentrates the drug. It can progress to seizures and lasting neurological damage. Go to an emergency department now for an urgent lithium level, hold today's dose, and sip water on the way.",
+ opioid_od:"Unrousable, breathing about four times a minute, with pinpoint pupils is an opioid overdose. Call an ambulance NOW and say 'not breathing properly, suspected overdose'. If naloxone is available, give it — it is safe even if you are wrong. Put him on his side in the recovery position, and if breathing stops, start rescue breaths or chest compressions. Stay with him; the effect of naloxone wears off before the opioid does.",
+ last_toxicity:"Numb tongue, metallic taste, ringing in the ears and dizziness minutes after a local anaesthetic injection is local anaesthetic systemic toxicity. It can progress to seizures and cardiac arrest within minutes. Tell the person who gave the injection IMMEDIATELY and call emergency services — the specific treatment is intravenous lipid emulsion, which clinics are meant to stock. Do not go home, and do not be talked into 'waiting to see'.",
+ /* ---- endocrine, renal, metabolic ---- */
+ adrenal_crisis:"Vomiting, dizziness on standing and a blood pressure that low in someone with Addison's disease is an adrenal crisis — an illness has outstripped your steroid dose. This is rapidly fatal untreated and completely treatable with prompt hydrocortisone. Use your emergency hydrocortisone injection NOW if you have one, then call an ambulance. Tell them 'adrenal crisis, I need IV hydrocortisone and fluids'. Do not wait to see whether the vomiting settles.",
+ hypoglycemia:"Insulin without food, shaking, cold sweats, confusion and double vision is severe hypoglycaemia. Treat it this second: 15-20 g of fast sugar — half a glass of juice or regular soft drink, three teaspoons of sugar, or glucose tablets — then recheck in 15 minutes and repeat if still low. Follow with a snack containing starch. If the person cannot swallow safely or becomes unresponsive, do NOT force food into the mouth: give glucagon if available, put them on their side and call an ambulance.",
+ hyperkalemia:"Missed dialysis with muscle weakness, tingling and a heart that feels like it is skipping beats suggests a dangerously high potassium level. This causes cardiac arrest with very little warning. Go to your dialysis unit or an emergency department NOW — call ahead. Avoid high-potassium foods (bananas, citrus, potatoes, coconut water, tomatoes) and any salt substitute, which is usually potassium chloride.",
+ rhabdo:"Severely painful, swollen muscles after unaccustomed intense exercise with dark tea or cola coloured urine is rhabdomyolysis — muscle breaking down and clogging the kidneys. It needs intravenous fluids to protect them. Go to an emergency department today. Drink water while you wait, and take no anti-inflammatory painkillers — they worsen the kidney injury.",
+ malignant_hyperthermia:"A temperature spike with rigid muscles and a racing heart after anaesthesia is malignant hyperthermia. Tell the recovery staff RIGHT NOW — this is an in-hospital emergency with a specific antidote, dantrolene, that must be given within minutes. Do not wait for someone to come around on their rounds; say the words 'I think this is malignant hyperthermia'.",
+ /* ---- infectious & haematological ---- */
+ neutropenic_fever:"A fever during chemotherapy is an emergency however well you feel — this is neutropenic sepsis, and 'otherwise okay' is exactly how it starts before deteriorating within hours. Do NOT wait for Monday. Call your chemotherapy unit's 24-hour line now and go to hospital immediately; you need antibiotics within an hour of arriving. Take your chemotherapy alert card and say 'I am neutropenic with a fever'.",
+ sickle_crisis:"A severe vaso-occlusive crisis not responding to your usual pain medicine, especially with chest pain, needs hospital care — chest involvement can mean acute chest syndrome, which is the most dangerous complication of sickle cell disease. Go to an emergency department now, take your care plan if you have one, keep warm and keep sipping fluids. You are entitled to prompt, adequate pain relief; do not let anyone dismiss it.",
+ /* ---- eye & environmental ---- */
+ crao:"Sudden, complete, painless loss of vision in one eye is a central retinal artery occlusion — a stroke of the eye. The window to save sight is a few hours and it also signals high immediate risk of a brain stroke. Go to an emergency department NOW, not an optician and not a routine eye appointment tomorrow. Tell them 'sudden painless vision loss, possible CRAO — this is a stroke equivalent'.",
+ heat_stroke:"Hot dry skin with confusion, slurred speech and collapse after exertion in heat is heat stroke, not simple exhaustion — the body has lost the ability to cool itself and organs are being damaged. Call an ambulance NOW and start cooling immediately: move into shade, remove excess clothing, and get cold water onto the skin — ice packs to the neck, armpits and groin, or immersion in cool water if possible. Do not give fluids by mouth to anyone confused or drowsy.",
  thyroid_storm:"An overactive thyroid (Graves' disease) plus a trigger like an infection, vomiting or a missed dose can tip into thyroid storm — a high fever, a heart rate over 130 at rest, drenching sweats, tremor, agitation and confusion. This is not dehydration from a stomach bug: untreated it carries a high death rate, and it worsens over hours. Go to a hospital emergency department NOW and tell them in these words: 'I have Graves' disease and I think this is thyroid storm.' Bring your thyroid medicines. Do not try to manage it at home with fluids and rest, and do not take extra thyroid medication on your own.",
  tachy_severe:"A resting heart rate that high, especially with fever, chest discomfort, breathlessness, confusion or fainting, needs urgent assessment — go to an emergency department now rather than waiting to see if it settles. Sit or lie down, avoid caffeine and any stimulant, and have someone take you rather than driving yourself.",
  cauda_equina:"Numbness across the inner thighs, buttocks or groin — the area you'd sit on a saddle — together with not being able to feel yourself urinate or wipe, is cauda equina syndrome until proven otherwise. The nerve bundle at the base of the spine is being compressed, and permanent loss of bladder, bowel and sexual function can follow within HOURS. Resting in bed is the one thing that must not happen here. Go to a hospital emergency department NOW and use these exact words: 'I have saddle numbness and bladder symptoms with back pain — I need an urgent MRI to rule out cauda equina.' Do not wait for morning, do not wait to see if it settles, and do not let anyone send you home with painkillers without a scan.",

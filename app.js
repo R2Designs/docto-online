@@ -114,14 +114,34 @@ let pendingText=null, activeChips=null;
    you take), and that advice would be lost under the generic BP warning. */
 const SPECIFIC_FIRST=["maoi_crisis","serotonin_syndrome","thyroid_storm","cauda_equina","aortic_dissection","aaa",
   "nec_fasc","compartment","meningococcal","co_poisoning","glaucoma_acute","temporal_arteritis",
-  "retinal_detach","dvt_pe","sepsis"];
+  "retinal_detach","dvt_pe","sepsis",
+  // neuro
+  "head_injury","subdural","tia","myasthenic_crisis","spinal_abscess",
+  // cardiovascular
+  "tamponade","limb_ischemia",
+  // abdominal
+  "perforation","pancreatitis","hernia_strangulated","cholangitis","splenic_rupture",
+  "intussusception","pyloric_stenosis",
+  // respiratory
+  "pneumothorax","asthma_severe","epiglottitis",
+  // obstetric & gynae
+  "abruption","ovarian_torsion","pid_severe",
+  // toxicology
+  "paracetamol_od","digoxin_tox","lithium_tox","opioid_od","last_toxicity",
+  // endocrine / renal / metabolic
+  "adrenal_crisis","hypoglycemia","hyperkalemia","rhabdo","malignant_hyperthermia",
+  // infectious / haematological / environmental
+  "neutropenic_fever","sickle_crisis","crao","heat_stroke"];
 function keywordFlag(text){
   const low=" "+text.toLowerCase()+" ";
-  const p=patternFlag(low);
-  if(p && SPECIFIC_FIRST.includes(p)) return p;
-  const v=vitalsFlag(low); if(v) return v;      // a number can be an emergency on its own
-  for(const rf of DB.redFlagKeywords){ for(const k of rf.k){ if(low.includes(k)) return rf.id; } }
-  return p;
+  /* Gather every candidate — patterns, quoted vital signs, plain keywords — then
+     let clinical precedence decide, rather than whichever rule happened to run first. */
+  const candidates=patternFlags(low);
+  const v=vitalsFlag(low); if(v && !candidates.includes(v)) candidates.push(v);
+  for(const rf of DB.redFlagKeywords){
+    for(const k of rf.k){ if(low.includes(k)){ if(!candidates.includes(rf.id)) candidates.push(rf.id); break; } }
+  }
+  return candidates.length ? rankFlags(candidates) : null;
 }
 
 /* Read "30 M", "30, male", "45/F", "f 22", "28 साल पुरुष" etc. from one answer.
@@ -171,12 +191,53 @@ function vitalsFlag(low){
    Catches things no single phrase reveals — e.g. appendicitis is "started near
    my navel, moved to the lower right, worse when I cough". */
 function patternFlag(low){
+  const all=patternFlags(low);
+  return all.length ? rankFlags(all) : null;
+}
+/* Every rule that matches, not just the first. A description can legitimately
+   satisfy several — pregnancy with a headache and visual disturbance matches both
+   pre-eclampsia and retinal detachment — and picking by array position hands out
+   confidently wrong advice. */
+function patternFlags(low){
   const hay = typeof low==="string" ? (low.startsWith(" ")?low:" "+low.toLowerCase()+" ") : "";
-  if(!hay || !DB.redFlagPatterns) return null;
+  const hits=[];
+  if(!hay || !DB.redFlagPatterns) return hits;
   for(const rule of DB.redFlagPatterns){
-    if(rule.need.every(group => group.some(term => hay.includes(term)))) return rule.id;
+    if(rule.need.every(group => group.some(term => hay.includes(term))) && !hits.includes(rule.id))
+      hits.push(rule.id);
   }
-  return null;
+  return hits;
+}
+/* Clinical precedence when several fire. Roughly: reversible-in-minutes first,
+   then things where the specific advice differs most from the generic version. */
+const FLAG_PRIORITY=[
+  "anaphylaxis","opioid_od","last_toxicity","malignant_hyperthermia","adrenal_crisis","hypoglycemia",
+  // named conditions the person told us about outrank look-alike syndromes:
+  // "I have myasthenia gravis" is far stronger evidence than a throat-symptom match
+  "myasthenic_crisis",
+  "aortic_dissection","tamponade","pneumothorax","asthma_severe","epiglottitis","breathing",
+  // a quoted BP in the emergency range, or a calf clot with chest signs, beats a
+  // generic chest-pain or eye match built from softer clues
+  "hypertensive_crisis","dvt_pe","cardiac",
+  "stroke","head_injury","headache_worst","meningococcal","meningitis","sepsis","neutropenic_fever",
+  "maoi_crisis","serotonin_syndrome","thyroid_storm","dka","hyperkalemia","heat_stroke",
+  "preeclampsia","abruption","preg_bleed","ectopic","ovarian_torsion","torsion",
+  "cauda_equina","spinal_abscess","limb_ischemia","compartment","nec_fasc","splenic_rupture",
+  "perforation","hernia_strangulated","cholangitis","obstruction","appendicitis","intussusception",
+  "pancreatitis","aaa","acute_abdomen","gi_bleed","pyloric_stenosis","pid_severe",
+  "temporal_arteritis","crao","glaucoma_acute","retinal_detach",
+  "paracetamol_od","digoxin_tox","lithium_tox","poison","tachy_severe",
+  "subdural","tia","rhabdo","sickle_crisis","co_poisoning","hemoptysis",
+  "hematuria","seizure","unconscious","crisis","dehydration"
+];
+function rankFlags(ids){
+  let best=null, bestRank=Infinity;
+  for(const id of ids){
+    const r=FLAG_PRIORITY.indexOf(id);
+    const rank = r<0 ? FLAG_PRIORITY.length : r;   // unknown ids sort last but still count
+    if(rank<bestRank){ bestRank=rank; best=id; }
+  }
+  return best;
 }
 async function emergencyStop(id){
   S.emergency=id;
@@ -464,12 +525,17 @@ async function flow(input){
       if(input.length>=25){
         // free pass first — regex handles the regular stuff
         applyExtract(localExtract(input));
-        /* Pay for the model only when the local pass left the picture thin: no
-           duration, nothing localising the problem, or a weak rule-engine match. */
+        /* Escalation policy: the local rules are cheap and fast but they only know
+           the phrasings we anticipated. So we consult the model unless the local
+           engine is already confident — meaning it either caught a red flag (we
+           returned above) or it matched a condition strongly AND read the key
+           details. Anything short of that is a case the local pass can't be
+           trusted on, and a missed emergency costs infinitely more than a token. */
         S.cond=scoreConditions();
-        const thin = !S.dur || (!S.pains.length && !S.temp) || confidence()==="Preliminary";
+        const readWell = S.dur && (S.pains.length || S.temp);
+        const confident = confidence()==="High" && readWell;
         let ex={};
-        if(thin){ typing(true); ex=await llmExtract(input); typing(false); }
+        if(!confident){ typing(true); ex=await llmExtract(input); typing(false); }
         if(ex.red_flag && DB.emergencyAdvice[ex.red_flag]){ await emergencyStop(ex.red_flag); return; }
         if(ex.id){ const c2=DB.conds.find(c=>c.id===ex.id); if(c2){ S.llmHint=c2.id; } }
         const filled=applyExtract(ex);
