@@ -69,11 +69,21 @@ function chips(list, {multi=false, doneLabel="OK"}={}){
     const avatar=document.createElement("div"); avatar.className="av"; avatar.innerHTML=BOT_AV; wrap.prepend(avatar);
     const box=document.createElement("div"); box.className="chips"; inner.appendChild(box);
     const sel=new Set(); const btns=[]; let okBtn=null;
-    function toggle(i){ const b=btns[i]; if(sel.has(i)){sel.delete(i);b.classList.remove("sel");} else {sel.add(i);b.classList.add("sel");} }
-    function finishSingle(i){ btns.forEach(x=>x.classList.add("done")); btns[i].classList.add("sel");
-      addUser(list[i]); activeChips=null; resetHint(); res({idx:i,label:list[i]}); }
-    function finishMulti(){ const arr=[...sel]; btns.forEach(x=>x.classList.add("done")); if(okBtn) okBtn.style.display="none";
-      addUser(arr.length?arr.map(i=>list[i]).join(", "):"—"); activeChips=null; resetHint(); res({idxs:arr,labels:arr.map(i=>list[i])}); }
+    /* Once a question is answered it must stay answered. A chosen chip keeps
+       keyboard focus, so a later Enter or Space would re-fire it and record the
+       same answer again — hence both the `settled` guard and disabling. */
+    let settled=false;
+    function lockDown(){ settled=true; activeChips=null; resetHint();
+      btns.forEach(x=>{ x.classList.add("done"); x.disabled=true; });
+      if(okBtn) okBtn.disabled=true;
+      if(document.activeElement && document.activeElement.blur) document.activeElement.blur(); }
+    function toggle(i){ if(settled) return; const b=btns[i];
+      if(sel.has(i)){sel.delete(i);b.classList.remove("sel");} else {sel.add(i);b.classList.add("sel");} }
+    function finishSingle(i){ if(settled) return; btns[i].classList.add("sel"); lockDown();
+      addUser(list[i]); res({idx:i,label:list[i]}); }
+    function finishMulti(){ if(settled) return; const arr=[...sel]; lockDown();
+      if(okBtn) okBtn.style.display="none";
+      addUser(arr.length?arr.map(i=>list[i]).join(", "):"—"); res({idxs:arr,labels:arr.map(i=>list[i])}); }
     list.forEach((c,i)=>{ const b=document.createElement("button"); b.className="chip"; b.textContent=c;
       b.onclick=()=> multi ? toggle(i) : finishSingle(i); box.appendChild(b); btns.push(b); });
     if(multi){ const w=document.createElement("div"); w.className="chipRowBtn";
@@ -570,7 +580,19 @@ function historyKey(){ return "docto_hist_"+(USER?USER.email||USER.name:"guest")
 function saveHistory(){
   if(!S || !S.complaint) return;
   const list=JSON.parse(localStorage.getItem(historyKey())||"[]");
-  const item={ id:S.id, date:S.date, title:(S.cond?S.cond.nm:"Consultation"), complaint:S.complaint,
+  /* An emergency must be titled as one. Filing "suspected appendicitis, sent to
+     hospital" under a bland label makes the history actively misleading. */
+  const EMG_TITLE={ appendicitis:"⚠ Suspected appendicitis", obstruction:"⚠ Suspected bowel obstruction",
+    ectopic:"⚠ Possible ectopic pregnancy", meningitis:"⚠ Possible meningitis", dka:"⚠ Diabetic emergency",
+    dehydration:"⚠ Severe dehydration", preeclampsia:"⚠ Possible pre-eclampsia", cardiac:"⚠ Possible heart attack",
+    stroke:"⚠ Possible stroke", gi_bleed:"⚠ Internal bleeding", breathing:"⚠ Breathing emergency",
+    anaphylaxis:"⚠ Anaphylaxis", crisis:"⚠ Urgent support needed", acute_abdomen:"⚠ Acute abdomen",
+    headache_worst:"⚠ Sudden severe headache", seizure:"⚠ Seizure", unconscious:"⚠ Unresponsive",
+    poison:"⚠ Poisoning/overdose", torsion:"⚠ Testicular torsion", hemoptysis:"⚠ Coughing blood",
+    hematuria:"⚠ Blood in urine", preg_bleed:"⚠ Bleeding in pregnancy" };
+  const title = S.emergency ? (EMG_TITLE[S.emergency]||"⚠ Emergency — sent to hospital")
+                            : (S.cond?S.cond.nm:"Consultation");
+  const item={ id:S.id, date:S.date, title, complaint:S.complaint,
     chat:CHAT().innerHTML, state:JSON.stringify({...S, transcript:[]}) };
   const ix=list.findIndex(x=>x.id===S.id); if(ix>=0) list[ix]=item; else list.unshift(item);
   localStorage.setItem(historyKey(), JSON.stringify(list.slice(0,40)));
