@@ -48,9 +48,24 @@ python3 -m http.server 8000
 - All data stays in the user's browser (localStorage) — nothing is uploaded; OCR runs on-device.
 
 ## Smart free-text fallback (optional, ₹0)
-The built-in rule engine handles most complaints (now typo-tolerant too). For odd phrasings, an optional LLM "router" can be enabled — it only classifies the complaint into one of the app's condition IDs / red flags (never generates advice), fires **only when the rule engine is unsure**, and caches results locally.
+The built-in rule engine handles most complaints (typo-tolerant too). For odd phrasings — Hinglish, unusual wording, symptoms described sideways — an optional LLM **router** kicks in. It only classifies the complaint into one of the app's own condition IDs or red flags; it never writes advice. All treatment text still comes from `data.js`. It fires **only when the rule engine is unsure**, caches results in localStorage, and if it's unavailable for any reason the app silently carries on with the rule engine alone.
 
-Setup (free): 1) Get a free Gemini API key at aistudio.google.com. 2) Cloudflare → Workers → create a worker, paste `worker.js`, deploy. 3) Add secret variable `GEMINI_KEY` with your key. 4) Paste the worker URL into `config.js → LLM_ENDPOINT`. Add your live domain to `ALLOWED_ORIGINS` in worker.js if it differs. Costs: Cloudflare free tier (100k req/day) + Gemini free tier — ₹0 at small scale; even on paid Gemini/Claude Haiku pricing, ~30k+ classifications per $1.
+The router is `worker.js`, deployed as a Cloudflare Worker. It tries two engines in order:
+
+1. **Cloudflare Workers AI** (default) — runs inside the worker itself. No API key, no separate billing account, nothing to expire. Free plan = 10,000 neurons/day; one classification costs a tiny fraction of a neuron.
+2. **Google Gemini** (optional backup) — only used if Workers AI fails *and* a `GEMINI_KEY` secret exists.
+
+**Setup (2 minutes):**
+
+1. Cloudflare → Workers & Pages → Create → Worker → paste `worker.js` → **Deploy**.
+2. Worker → **Settings → Bindings → Add → Workers AI** → variable name `AI`.
+3. Paste the worker URL into `config.js → LLM_ENDPOINT`.
+4. Add your live domain to `ALLOWED_ORIGINS` at the top of `worker.js` if it isn't `r2designs.github.io`.
+5. *(Optional)* Settings → Variables → add secret `GEMINI_KEY` to enable the backup engine.
+
+**Health check:** open the worker URL in a browser — it reports its version and which engines are wired up, e.g. `{"ok":true,"version":"v6","engines":{"workersAI":true,"gemini":true}}`. To see exactly what each engine replied, POST `{"debug":true,"text":"…","conds":[…],"flags":[…]}`.
+
+**Maintenance note:** providers retire model names (Cloudflare dropped `llama-3.1-8b` in May 2026) and change response shapes. The worker guards against both — it walks a list of models until one answers, digs the text out of any known envelope shape, and validates the returned ID against the condition list the app sent, so a hallucinated or unrecognised ID is discarded rather than passed through. If every model fails, it returns nulls and the rule engine takes over.
 
 ## Notes / possible next steps
 - Voice input, more languages, and a shareable report link are easy add-ons.
