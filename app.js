@@ -239,9 +239,12 @@ function rankFlags(ids){
   }
   return best;
 }
-async function emergencyStop(id){
+async function emergencyStop(id, reason){
   S.emergency=id;
-  const msg=DB.emergencyAdvice[id]||"";
+  S.emergencyReason=reason||null;
+  let msg=DB.emergencyAdvice[id]||"";
+  // the reader's own words for WHY, kept separate from our safety instructions
+  if(reason) msg = String(reason).replace(/\s+/g," ").trim() + " — " + msg;  // escaped downstream
   await addBot(`<div class="emg"><b>${t("emerg_now")}</b><br>${esc(msg)}<br><br>${t("emerg_msg")}</div>
   <h3>${t("while_wait")}</h3><ul>
   <li>Stay with the person; keep them calm, seated or lying as comfortable.</li>
@@ -525,18 +528,17 @@ async function flow(input){
       if(input.length>=25){
         // free pass first — regex handles the regular stuff
         applyExtract(localExtract(input));
-        /* Escalation policy: the local rules are cheap and fast but they only know
-           the phrasings we anticipated. So we consult the model unless the local
-           engine is already confident — meaning it either caught a red flag (we
-           returned above) or it matched a condition strongly AND read the key
-           details. Anything short of that is a case the local pass can't be
-           trusted on, and a missed emergency costs infinitely more than a token. */
         S.cond=scoreConditions();
-        const readWell = S.dur && (S.pains.length || S.temp);
-        const confident = confidence()==="High" && readWell;
-        let ex={};
-        if(!confident){ typing(true); ex=await llmExtract(input); typing(false); }
+        /* Triage policy — the reader leads, the rules are a floor.
+           Keyword rules only recognise phrasings we thought of, so anything they
+           don't catch goes to the model. The rules already ran above and would have
+           stopped us on a hit; reaching here means they found nothing, which is
+           precisely when they're least trustworthy. */
+        typing(true); const ex=await llmExtract(input); typing(false);
         if(ex.red_flag && DB.emergencyAdvice[ex.red_flag]){ await emergencyStop(ex.red_flag); return; }
+        /* The long tail: a real emergency we hold no specific entry for. We still
+           stop — using our own safety instructions, quoting only the reason. */
+        if(ex.emergency){ await emergencyStop("unspecified", ex.emergency_reason); return; }
         if(ex.id){ const c2=DB.conds.find(c=>c.id===ex.id); if(c2){ S.llmHint=c2.id; } }
         const filled=applyExtract(ex);
         if(S.extracted.length || filled.length){
@@ -788,7 +790,8 @@ function saveHistory(){
     anaphylaxis:"⚠ Anaphylaxis", crisis:"⚠ Urgent support needed", acute_abdomen:"⚠ Acute abdomen",
     headache_worst:"⚠ Sudden severe headache", seizure:"⚠ Seizure", unconscious:"⚠ Unresponsive",
     poison:"⚠ Poisoning/overdose", torsion:"⚠ Testicular torsion", hemoptysis:"⚠ Coughing blood",
-    hematuria:"⚠ Blood in urine", preg_bleed:"⚠ Bleeding in pregnancy" };
+    hematuria:"⚠ Blood in urine", preg_bleed:"⚠ Bleeding in pregnancy",
+    unspecified:"⚠ Urgent — hospital assessment needed" };
   const title = S.emergency ? (EMG_TITLE[S.emergency]||"⚠ Emergency — sent to hospital")
                             : (S.cond?S.cond.nm:"Consultation");
   const item={ id:S.id, date:S.date, title, complaint:S.complaint,

@@ -23,7 +23,9 @@ const ALLOWED_ORIGINS = [
   "https://r2designs.github.io",
   "http://localhost:8000"
 ];
-const VERSION = "v6";
+const VERSION = "v10";
+// Claude reads messy clinical prose best, so it leads when a key is present.
+const CLAUDE_MODELS = ["claude-haiku-4-5-20251001"];
 // Workers AI models, tried in order. Cloudflare retires model names periodically
 // (llama-3.1-8b went away on 2026-05-30), so keep several — the first that answers wins.
 const CF_MODELS = [
@@ -82,20 +84,44 @@ export default {
     if (req.method === "GET")
       return new Response(JSON.stringify({
         ok: true, version: VERSION,
-        engines: { workersAI: !!env.AI, gemini: !!env.GEMINI_KEY }
+        engines: { claude: !!env.ANTHROPIC_KEY, workersAI: !!env.AI, gemini: !!env.GEMINI_KEY }
       }), { headers: cors });
     if (req.method !== "POST")
       return new Response(JSON.stringify({ error: "POST only" }), { status: 405, headers: cors });
 
     try {
-      const { text, conds, flags, debug } = await req.json();
-      if (!text || typeof text !== "string" || text.length > 600)
+      const { text, conds, flags, areas, mode, debug } = await req.json();
+      if (!text || typeof text !== "string" || text.length > 1500)
         return new Response(JSON.stringify({ error: "bad input" }), { status: 400, headers: cors });
 
       const condList = Array.isArray(conds) ? conds.slice(0, 60).join("; ") : "";
       const flagList = Array.isArray(flags) ? flags.slice(0, 30).join(", ") : "";
+      const areaList = Array.isArray(areas) ? areas.slice(0, 20).join(", ") : "";
+      const extract  = mode === "extract";
 
-      const system =
+      /* Two modes:
+         - classify (default): just pick a condition id / red flag.
+         - extract: also pull the clinical detail the user already volunteered, so
+           the app can skip questions it has answers to. Still a reader, not a doctor —
+           it reports what was said; it never decides treatment. */
+      const system = extract ?
+`Clinical intake READER. Extract only what the patient stated. No advice, no invention.
+conds: ${condList}
+flags: ${flagList}
+areas: ${areaList}
+
+Reply ONLY: {"id","red_flag","emergency","emergency_reason","duration","severity","temp_f","pain_areas","symptoms","onset","summary"}
+- emergency: true if this needs hospital assessment now, else false. Judge this INDEPENDENTLY — set it true even when no flag id fits.
+- emergency_reason: if emergency is true, one short clause naming what you suspect and why, e.g. "fever with a heart murmur and splinter haemorrhages suggests endocarditis". Empty otherwise. Name the concern only; give no treatment advice.
+- id/red_flag: best match from the lists, else "none". Judge the DESCRIPTION, not the patient's own conclusion — "is this just a migraine?" is not reassurance. Weigh patterns and numbers: navel pain migrating to right lower abdomen + nausea + low fever = appendicitis; BP >=180/120 = hypertensive emergency; MAOI drug + aged cheese/wine/cured meat + pounding headache = tyramine crisis; SSRI+tramadol/triptan + tremor/sweats/fever = serotonin syndrome; saddle numbness + bladder change = cauda equina; Graves + fever + HR>130 = thyroid storm.
+- duration: today (<24h) | days | week | weeks | none
+- severity: 1-10 only if stated/clearly implied, else null
+- temp_f: number in F (convert from C), else null
+- pain_areas: ids from areas, else []
+- symptoms: max 8 short phrases the patient used
+- onset: sudden | gradual | none
+- summary: one sentence under 20 words, no diagnosis
+Never fill a field the patient did not mention — use null/"none"/[]. A guess makes the app skip a question it must ask.` :
 `You are a strict triage CLASSIFIER for a health app. You do NOT give medical advice.
 Condition options (id=name): ${condList}
 Emergency flag options: ${flagList}
@@ -111,13 +137,42 @@ Rules:
       const tried = [];
       let parsed = null;
 
-      /* ---- Engine 1: Cloudflare Workers AI (no key, no billing account) ---- */
-      if (env.AI) {
+      /* ---- Engine 1: Claude (best at reading messy clinical prose) ---- */
+      if (env.ANTHROPIC_KEY) {
+        for (const model of CLAUDE_MODELS) {
+          try {
+            const r = await fetch("https://api.anthropic.com/v1/messages", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-api-key": env.ANTHROPIC_KEY,
+                "anthropic-version": "2023-06-01"
+              },
+              body: JSON.stringify({
+                model,
+                max_tokens: extract ? 300 : 60,
+                temperature: 0,
+                system,
+                messages: [{ role: "user", content: user }]
+              })
+            });
+            const j = await r.json();
+            const p = extractJson(j);
+            tried.push({ engine: "claude", model, status: r.status, err: j && j.error && j.error.message });
+            if (p.id || p.red_flag) { parsed = p; break; }
+          } catch (e) {
+            tried.push({ engine: "claude", model, err: String(e).slice(0, 200) });
+          }
+        }
+      }
+
+      /* ---- Engine 2: Cloudflare Workers AI (no key, no billing account) ---- */
+      if (!parsed && env.AI) {
         for (const model of CF_MODELS) {
           try {
             const r = await env.AI.run(model, {
               messages: [{ role: "system", content: system }, { role: "user", content: user }],
-              max_tokens: 80,
+              max_tokens: extract ? 300 : 60,
               temperature: 0
             });
             const p = extractJson(r);
@@ -129,11 +184,11 @@ Rules:
             tried.push({ engine: "workers-ai", model, err: String(e).slice(0, 200) });
           }
         }
-      } else {
+      } else if (!parsed) {
         tried.push({ engine: "workers-ai", err: "no AI binding — add one in Settings → Bindings" });
       }
 
-      /* ---- Engine 2: Gemini (optional backup) ---- */
+      /* ---- Engine 3: Gemini (optional backup) ---- */
       if (!parsed && env.GEMINI_KEY) {
         const prompt = system + "\n\n" + user;
         for (const model of GEMINI_MODELS) {
@@ -174,10 +229,40 @@ Rules:
         const s = String(v).trim();
         return allowed.length === 0 || allowed.includes(s) ? s : null;
       };
-      return new Response(JSON.stringify({
+      const out = {
         id:       clean(parsed.id, condIds),
         red_flag: clean(parsed.red_flag, flagIds)
-      }), { headers: cors });
+      };
+
+      if (extract) {
+        /* Sanitise every extracted field. A model that invents a duration or a
+           temperature would make the app skip a question it needs to ask, so
+           anything not in range is dropped back to "unknown". */
+        const areaIds = Array.isArray(areas) ? areas.map(String) : [];
+        const num = (v, lo, hi) => {
+          const n = typeof v === "number" ? v : parseFloat(v);
+          return Number.isFinite(n) && n >= lo && n <= hi ? n : null;
+        };
+        out.duration   = ["today", "days", "week", "weeks"].includes(parsed.duration) ? parsed.duration : null;
+        out.severity   = num(parsed.severity, 1, 10);
+        out.severity   = out.severity === null ? null : Math.round(out.severity);
+        out.temp_f     = num(parsed.temp_f, 93, 110);
+        out.pain_areas = Array.isArray(parsed.pain_areas)
+          ? parsed.pain_areas.map(String).filter(a => areaIds.length === 0 || areaIds.includes(a)).slice(0, 8)
+          : [];
+        out.symptoms   = Array.isArray(parsed.symptoms)
+          ? parsed.symptoms.map(s => String(s).slice(0, 60)).slice(0, 8) : [];
+        out.onset      = ["sudden", "gradual"].includes(parsed.onset) ? parsed.onset : null;
+        out.summary    = typeof parsed.summary === "string" ? parsed.summary.slice(0, 200) : null;
+        /* The long tail: a genuine emergency we have no id for. Carry the reader's
+           reason through so the app can say WHY, while the safety instructions
+           still come from our own vetted text. */
+        out.emergency  = parsed.emergency === true || parsed.emergency === "true";
+        out.emergency_reason = typeof parsed.emergency_reason === "string"
+          ? parsed.emergency_reason.slice(0, 240) : null;
+      }
+
+      return new Response(JSON.stringify(out), { headers: cors });
     } catch (e) {
       return new Response(JSON.stringify({ error: "fail" }), { status: 500, headers: cors });
     }
