@@ -112,7 +112,7 @@ let pendingText=null, activeChips=null;
 /* Drug-interaction emergencies outrank a raw vital sign: a hypertensive reading
    caused by an MAOI needs MAOI-specific handling (no triptans, tell the ER what
    you take), and that advice would be lost under the generic BP warning. */
-const SPECIFIC_FIRST=["maoi_crisis","serotonin_syndrome","cauda_equina","aortic_dissection","aaa",
+const SPECIFIC_FIRST=["maoi_crisis","serotonin_syndrome","thyroid_storm","cauda_equina","aortic_dissection","aaa",
   "nec_fasc","compartment","meningococcal","co_poisoning","glaucoma_acute","temporal_arteritis",
   "retinal_detach","dvt_pe","sepsis"];
 function keywordFlag(text){
@@ -160,6 +160,11 @@ function vitalsFlag(low){
   // oxygen saturation
   const spo2=/\b(?:spo2|oxygen|sat(?:uration)?s?)\D{0,12}(\d{2,3})\s*%?/.exec(low);
   if(spo2){ const o=+spo2[1]; if(o>=50 && o<=94) return "breathing"; }
+  // resting heart rate — "145 bpm", "heart rate 145", "pulse of 145"
+  const hr=/\b(\d{2,3})\s*bpm\b/.exec(low)
+        || /\b(?:heart\s*rate|pulse|hr)\D{0,10}(\d{2,3})\b/.exec(low);
+  if(hr){ const b=+hr[1]; if(b>=130 && b<=260) return "tachy_severe";
+          if(b>0 && b<=40) return "tachy_severe"; }   // dangerously slow needs the same urgency
   return null;
 }
 /* Combination red flags: fires only when every `need` group has a hit.

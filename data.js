@@ -83,6 +83,14 @@ redFlagPatterns: [
    ["not passing urine","no urine","very little urine","peshab nahi","dizzy when standing",
     "dizzy on standing","cannot keep anything down","sunken eyes","very weak","dry mouth and dizzy"]
  ]},
+ /* Thyroid storm — known hyperthyroidism plus a trigger and systemic upset.
+    Almost always self-explained as "just a stomach bug" or "just anxiety". */
+ {id:"thyroid_storm", need:[
+   ["graves","hyperthyroid","overactive thyroid","thyrotoxic","thyroid storm","carbimazole","methimazole",
+    "propylthiouracil","thyroid problem","thyroid ki problem"],
+   ["fever","high temperature","103","104","105","heart rate","racing heart","palpitation","bpm","pounding heart",
+    "sweating","tremor","trembling","shaking","confus","agitat","very anxious","extremely anxious","vomit","diarrhea"]
+ ]},
  /* Cauda equina — saddle numbness + bladder/bowel change. The person usually
     presents it as "bad back pain", and resting is the instinctive wrong answer. */
  {id:"cauda_equina", need:[
@@ -108,7 +116,7 @@ redFlagPatterns: [
  ]},
  /* Sepsis — infection plus systemic collapse signs */
  {id:"sepsis", need:[
-   ["fever","infection","bukhar","high temperature","chills","rigors"],
+   ["fever","infection","bukhar","high temperature","chills","rigors","103","104","105"],
    ["confus","disorient","not making sense","very drowsy","slurring","mottled","blotchy skin","cold clammy",
     "shivering uncontrollably","breathing very fast","barely passing urine","not passed urine all day","bp is low","low blood pressure"]
  ]},
@@ -126,8 +134,9 @@ redFlagPatterns: [
  ]},
  /* Acute angle-closure glaucoma */
  {id:"glaucoma_acute", need:[
-   ["eye pain","painful eye","red eye","eye is red"],
-   ["halo","rainbow around light","blurred vision","blurry vision","vision is blurred","hazy vision","vomit","headache"]
+   ["eye","vision","sight"],
+   ["halo","rainbow","blurred","blurry","hazy","cloudy vision","misty vision"],
+   ["pain","ache","agonis","agoniz","vomit","nausea","headache","forehead","brow"]
  ]},
  /* Giant cell (temporal) arteritis */
  {id:"temporal_arteritis", need:[
@@ -217,6 +226,8 @@ emergencyAdvice: {
  dehydration:"Repeated loose stools or vomiting with very little urine, dizziness on standing, or an inability to keep fluids down means significant dehydration. Start ORS in small frequent sips right away, and go to a hospital — you may need IV fluids, especially if this is a child or an elderly person.",
  preeclampsia:"In pregnancy, a persistent headache, blurred vision or seeing spots, sudden swelling of the face or hands, or pain under the ribs can signal pre-eclampsia. Go to your maternity hospital now for a blood-pressure and urine check — this can progress quickly.",
  poison:"Suspected poisoning/overdose/bite — emergency now. Do not induce vomiting.",
+ thyroid_storm:"An overactive thyroid (Graves' disease) plus a trigger like an infection, vomiting or a missed dose can tip into thyroid storm — a high fever, a heart rate over 130 at rest, drenching sweats, tremor, agitation and confusion. This is not dehydration from a stomach bug: untreated it carries a high death rate, and it worsens over hours. Go to a hospital emergency department NOW and tell them in these words: 'I have Graves' disease and I think this is thyroid storm.' Bring your thyroid medicines. Do not try to manage it at home with fluids and rest, and do not take extra thyroid medication on your own.",
+ tachy_severe:"A resting heart rate that high, especially with fever, chest discomfort, breathlessness, confusion or fainting, needs urgent assessment — go to an emergency department now rather than waiting to see if it settles. Sit or lie down, avoid caffeine and any stimulant, and have someone take you rather than driving yourself.",
  cauda_equina:"Numbness across the inner thighs, buttocks or groin — the area you'd sit on a saddle — together with not being able to feel yourself urinate or wipe, is cauda equina syndrome until proven otherwise. The nerve bundle at the base of the spine is being compressed, and permanent loss of bladder, bowel and sexual function can follow within HOURS. Resting in bed is the one thing that must not happen here. Go to a hospital emergency department NOW and use these exact words: 'I have saddle numbness and bladder symptoms with back pain — I need an urgent MRI to rule out cauda equina.' Do not wait for morning, do not wait to see if it settles, and do not let anyone send you home with painkillers without a scan.",
  aortic_dissection:"A sudden tearing or ripping pain in the chest or between the shoulder blades — often described as the worst pain of your life, sometimes with a difference between your two arms — can be an aortic dissection. Call an ambulance now (India 108). Do not drive yourself, do not take aspirin, and stay as still as possible.",
  aaa:"Severe abdominal or back pain with a pulsating feeling in the abdomen, especially over 60 or with known aneurysm, can be a leaking aortic aneurysm. Call an ambulance immediately — do not drive yourself and take nothing by mouth.",
