@@ -1,0 +1,15 @@
+# Cloudflare Worker config for the triage router.
+#
+# With the repo connected under Worker → Settings → Build, every push to main
+# deploys the worker automatically — no copy-pasting into the dashboard.
+#
+# Secrets (ANTHROPIC_KEY, GEMINI_KEY) are NOT listed here and must never be:
+# they stay in Worker → Settings → Variables and Secrets, and survive deploys.
+
+name = "docto-llm"
+main = "worker.js"
+compatibility_date = "2026-07-01"
+
+# Cloudflare's own inference — no API key, no external billing account.
+[ai]
+binding = "AI"
