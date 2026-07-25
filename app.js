@@ -289,7 +289,11 @@ async function llmClassify(text){
    so we don't interrogate them about things they've just told us. Returns {} if the
    router is unavailable — the flow then simply asks every question as before. */
 async function llmExtract(text){
-  if(!CONFIG.LLM_ENDPOINT || !text || text.length<25) return {};
+  /* Only worth a call when there's actually prose to read. "fever since yesterday"
+     tells the rule engine everything already, so paying to parse it is waste. */
+  if(!CONFIG.LLM_ENDPOINT || !text) return {};
+  const words=text.trim().split(/\s+/).length;
+  if(text.length<40 || words<8) return {};
   try{
     const key="docto_ex_"+text.toLowerCase().trim().replace(/\s+/g," ").slice(0,90);
     const cached=localStorage.getItem(key); if(cached) return JSON.parse(cached);
@@ -308,6 +312,68 @@ async function llmExtract(text){
   return {};
 }
 
+/* A free local pass over the narrative. Duration, temperature and pain location are
+   regular enough to read with regex, and every field this fills is one the paid model
+   doesn't have to. Also works offline. */
+function localExtract(text){
+  const low=" "+String(text||"").toLowerCase()+" ";
+  const out={pain_areas:[], symptoms:[]};
+  /* Whole-word matching only. Substring matching quietly finds "ear" inside
+     "near" and "years", which then routes the whole consultation wrongly. */
+  const has=w=>new RegExp("(^|[^a-z])"+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"([^a-z]|$)","i").test(low);
+  const hasAny=arr=>arr.some(has);
+  // stem match for symptom words, so "vomited"/"vomiting" both count
+  const stem=w=>new RegExp("(^|[^a-z])"+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"i").test(low);
+
+  // duration — longest first, so "for the last month" isn't read as "twice a week"
+  const hrs=/\b(\d{1,2})\s*(?:hours?|hrs?|ghante)\b/.exec(low);
+  if(hasAny(["months","month","years","year","chronic","long time","mahine","saal"]) || /\b\d+\s*weeks\b/.test(low))
+    out.duration="weeks";
+  else if(hasAny(["a week","one week","1 week","7 days","hafta","hafte"])) out.duration="week";
+  else if(hasAny(["yesterday","2 days","two days","3 days","three days","couple of days","few days","kal se","din se"]))
+    out.duration="days";
+  else if(hasAny(["today","this morning","tonight","since morning","last night","few hours","aaj","abhi"]) || (hrs && +hrs[1]<=24))
+    out.duration="today";
+
+  // temperature, in either scale
+  const f=/\b(\d{2,3}(?:\.\d)?)\s*(?:°\s*)?f\b/.exec(low);
+  if(f){ const v=parseFloat(f[1]); if(v>=93&&v<=110) out.temp_f=v; }
+  if(!out.temp_f){ const c=/\b(\d{2}(?:\.\d)?)\s*(?:°\s*)?c\b/.exec(low);
+    if(c){ const v=parseFloat(c[1]); if(v>=34&&v<=44) out.temp_f=Math.round((v*9/5+32)*10)/10; } }
+
+  // severity stated as a score
+  const sv=/\b(\d{1,2})\s*(?:\/|out of)\s*10\b/.exec(low);
+  if(sv){ const v=+sv[1]; if(v>=1&&v<=10) out.severity=v; }
+
+  // pain location
+  const AREA={ head:["head","headache","sir dard","migraine","forehead","temple"],
+    eyes:["eye","eyes","vision","aankh"], ear:["ear","kaan"],
+    throat:["throat","swallow","gala"], chest:["chest","seene"],
+    upabd:["upper abdomen","upper stomach","above my navel","epigastr","ribs"],
+    lowabd:["lower abdomen","lower stomach","lower belly","pelvi","groin","pet ke niche"],
+    back:["back pain","lower back","spine","kamar"], joints:["joint","knee","elbow","shoulder","wrist"],
+    muscles:["muscle","body ache","body pain","badan dard"], skin:["skin","rash","itch"],
+    urinary:["urin","peshab","pee ","bathroom"], teeth:["tooth","teeth","dental","daant","gum"] };
+  for(const k in AREA) if(hasAny(AREA[k])) out.pain_areas.push(k);
+  /* "lower-right side of my abdomen" is the commonest way people locate belly pain,
+     and none of the plain keywords above catch it. */
+  const belly="(?:abdomen|abdominal|belly|stomach|tummy|pet)";
+  if(new RegExp("lower[- ](?:\\w+[- ])?(?:side |part |quadrant )?(?:of (?:my |the )?)?"+belly).test(low)
+     || new RegExp(belly+"[^.]{0,20}\\blower\\b").test(low)){
+    if(!out.pain_areas.includes("lowabd")) out.pain_areas.push("lowabd"); }
+  if(new RegExp("upper[- ](?:\\w+[- ])?(?:side |part )?(?:of (?:my |the )?)?"+belly).test(low)){
+    if(!out.pain_areas.includes("upabd")) out.pain_areas.push("upabd"); }
+
+  // symptoms worth carrying into the report
+  [["nausea","nausea"],["nauseous","nausea"],["vomit","vomiting"],["ulti","vomiting"],
+   ["diarrhea","loose motions"],["loose motion","loose motions"],["dizzy","dizziness"],
+   ["sweating","sweating"],["chills","chills"],["cough","cough"],["breathless","breathlessness"],
+   ["numb","numbness"],["tremor","tremor"],["trembling","tremor"]]
+    .forEach(([k,v])=>{ if(stem(k) && !out.symptoms.includes(v)) out.symptoms.push(v); });
+  out.symptoms=out.symptoms.slice(0,8);
+  return out;
+}
+
 /* Copy extracted values into the session. Only fills blanks — never overwrites
    something the person explicitly answered. */
 function applyExtract(ex){
@@ -317,8 +383,10 @@ function applyExtract(ex){
   if(ex.temp_f && !S.temp){ S.temp=ex.temp_f; S.feverKind="meas"; filled.push("temp"); }
   if(Array.isArray(ex.pain_areas) && ex.pain_areas.length && !S.pains.length){
     S.pains=ex.pain_areas.slice(); filled.push("pain"); }
-  if(Array.isArray(ex.symptoms) && ex.symptoms.length) S.symptoms=ex.symptoms.slice();
-  S.extracted=filled;
+  if(Array.isArray(ex.symptoms) && ex.symptoms.length && !(S.symptoms||[]).length) S.symptoms=ex.symptoms.slice();
+  // accumulate: this runs twice (local pass, then the model) and the second
+  // call must not erase what the first one found
+  S.extracted=(S.extracted||[]).concat(filled);
   return filled;
 }
 
@@ -394,11 +462,18 @@ async function flow(input){
          already told us. A long narrative followed by ten questions they just
          answered is the fastest way to make someone abandon the consultation. */
       if(input.length>=25){
-        typing(true); const ex=await llmExtract(input); typing(false);
+        // free pass first — regex handles the regular stuff
+        applyExtract(localExtract(input));
+        /* Pay for the model only when the local pass left the picture thin: no
+           duration, nothing localising the problem, or a weak rule-engine match. */
+        S.cond=scoreConditions();
+        const thin = !S.dur || (!S.pains.length && !S.temp) || confidence()==="Preliminary";
+        let ex={};
+        if(thin){ typing(true); ex=await llmExtract(input); typing(false); }
         if(ex.red_flag && DB.emergencyAdvice[ex.red_flag]){ await emergencyStop(ex.red_flag); return; }
         if(ex.id){ const c2=DB.conds.find(c=>c.id===ex.id); if(c2){ S.llmHint=c2.id; } }
         const filled=applyExtract(ex);
-        if(filled.length){
+        if(S.extracted.length || filled.length){
           await addBot(recapHtml(),450);
           const ok=await chips([t("recapYes"),t("recapNo")]);
           if(ok.idx===1){ S.dur=null; S.sev=null; S.temp=null; S.feverKind=null; S.pains=[]; S.extracted=[]; }
