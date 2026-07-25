@@ -11,7 +11,7 @@ en: {
  view:"Open", delete:"Delete", download:"Download report", print:"Print / Save PDF", startNew:"+ New ailment",
  welcome:"Hello NAME! I'm Docto — I'll ask a few quick questions, like a doctor would, then give you a clear plan. This is guidance, not a replacement for a doctor. Shall we begin?",
  q_who:"Who is this consultation for?", who_self:"Myself", who_child:"A child (under 12)", who_elder:"An elderly person (65+)", who_other:"Someone else",
- q_agesex:"Please tell me the age and select sex:", age_ph:"Age in years", sex_m:"Male", sex_f:"Female", sex_o:"Other",
+ q_agesex:"How old are you, and male or female? (e.g. \"30 M\")", agesex_ph:"e.g. 30 M", age_ph:"Age in years", sex_m:"Male", sex_f:"Female", sex_o:"Other",
  q_preg:"Is there any chance of pregnancy or currently breastfeeding?", yes:"Yes", no:"No",
  q_complaint:"Now tell me — what's troubling you the most today? Describe in your own words (e.g., \"fever and body pain since yesterday\").",
  q_duration:"Since when is this going on?", dur_today:"Started today", dur_days:"2–3 days", dur_week:"About a week", dur_weeks:"More than 2 weeks",

@@ -21,6 +21,8 @@ redFlagKeywords: [
  {k:["pregnant bleeding","pregnancy bleeding"], id:"preg_bleed"},
  {k:["severe abdominal pain","pet me bahut tez dard","rigid abdomen"], id:"acute_abdomen"},
  {k:["snake bite","poison","overdose","zeher"], id:"poison"},
+ {k:["serotonin syndrome","neuroleptic malignant"], id:"serotonin_syndrome"},
+ {k:["hypertensive crisis","bp 200","bp is 200","malignant hypertension"], id:"hypertensive_crisis"},
  {k:["testicle sudden pain"], id:"torsion"}
 ],
 
@@ -81,6 +83,28 @@ redFlagPatterns: [
    ["not passing urine","no urine","very little urine","peshab nahi","dizzy when standing",
     "dizzy on standing","cannot keep anything down","sunken eyes","very weak","dry mouth and dizzy"]
  ]},
+ /* MAOI + tyramine ("cheese reaction") — a hypertensive crisis that reads like a migraine.
+    The person is often certain it's just a bad headache, which is exactly the danger. */
+ {id:"maoi_crisis", need:[
+   ["maoi","mao inhibitor","phenelzine","nardil","tranylcypromine","parnate","isocarboxazid","marplan",
+    "selegiline","emsam","moclobemide","rasagiline","linezolid"],
+   ["headache","neck stiff","stiff neck","racing heart","palpitation","heart pounding","sweating",
+    "blood pressure","bp ","nausea","dizzy","chest pain","vomit"]
+ ]},
+ /* Same crisis described by the food trigger rather than the drug name */
+ {id:"maoi_crisis", need:[
+   ["antidepressant","depression medicine","psychiatric medicine"],
+   ["aged cheese","cured meat","red wine","salami","soy sauce","fermented","tyramine","pepperoni","sauerkraut"],
+   ["pounding headache","throbbing headache","severe headache","neck stiff","stiff neck","racing heart",
+    "palpitation","blood pressure"]
+ ]},
+ /* Serotonin syndrome — serotonergic drug + the triad of mental, autonomic and neuromuscular signs */
+ {id:"serotonin_syndrome", need:[
+   ["ssri","snri","sertraline","fluoxetine","escitalopram","citalopram","paroxetine","venlafaxine",
+    "duloxetine","tramadol","triptan","sumatriptan","st john","maoi","linezolid","lithium"],
+   ["agitat","confus","restless","twitch","muscle jerk","stiff muscles","tremor","shivering"],
+   ["sweating","fever","fast heartbeat","racing heart","dilated pupil","diarrhea","high temperature"]
+ ]},
  /* Pre-eclampsia — pregnancy + headache/vision change/swelling/upper-abdominal pain */
  {id:"preeclampsia", need:[
    ["pregnan","garbh","expecting"],
@@ -110,6 +134,9 @@ emergencyAdvice: {
  dehydration:"Repeated loose stools or vomiting with very little urine, dizziness on standing, or an inability to keep fluids down means significant dehydration. Start ORS in small frequent sips right away, and go to a hospital — you may need IV fluids, especially if this is a child or an elderly person.",
  preeclampsia:"In pregnancy, a persistent headache, blurred vision or seeing spots, sudden swelling of the face or hands, or pain under the ribs can signal pre-eclampsia. Go to your maternity hospital now for a blood-pressure and urine check — this can progress quickly.",
  poison:"Suspected poisoning/overdose/bite — emergency now. Do not induce vomiting.",
+ hypertensive_crisis:"That blood pressure is in the emergency range (180/120 or above). With a pounding headache, neck stiffness, palpitations, dizziness or nausea alongside it, this is a hypertensive emergency, not a migraine — organs can be injured within hours. Go to a hospital emergency department NOW; do not drive yourself. Do not take an extra dose of your BP medicine to force the number down at home — dropping it too fast is dangerous in itself. Take a photo of your BP readings and bring every medicine you take, including any prescribed for depression.",
+ maoi_crisis:"This looks like a tyramine reaction — an MAOI antidepressant (phenelzine, tranylcypromine, isocarboxazid, selegiline, moclobemide) taken with aged cheese, cured meat, red wine, soy sauce, fermented or overripe foods can push blood pressure to dangerous levels within an hour. A pounding headache with neck stiffness, palpitations, sweating and nausea is the classic picture, and it is NOT a migraine. Go to an emergency department immediately and tell them you take an MAOI and what you ate — they have specific treatments for this and will not use certain standard drugs. Do not take a triptan or any migraine medicine, and do not lie flat.",
+ serotonin_syndrome:"Agitation or confusion with muscle twitching or stiffness, sweating, fever, shivering, fast heartbeat and dilated pupils — especially after starting or combining serotonergic drugs (SSRIs/SNRIs, MAOIs, tramadol, triptans, linezolid, St John's wort) — can be serotonin syndrome. Stop nothing on your own, but go to an emergency department now and take a list of everything you take.",
  torsion:"Sudden severe testicular pain is an emergency (torsion)."
 },
 

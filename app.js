@@ -109,10 +109,56 @@ function askText(ph){ activeChips=null; return new Promise(res=>{ const inp=$("i
 let pendingText=null, activeChips=null;
 
 /* ---------------- red-flag engine ---------------- */
+/* Drug-interaction emergencies outrank a raw vital sign: a hypertensive reading
+   caused by an MAOI needs MAOI-specific handling (no triptans, tell the ER what
+   you take), and that advice would be lost under the generic BP warning. */
+const SPECIFIC_FIRST=["maoi_crisis","serotonin_syndrome"];
 function keywordFlag(text){
   const low=" "+text.toLowerCase()+" ";
+  const p=patternFlag(low);
+  if(p && SPECIFIC_FIRST.includes(p)) return p;
+  const v=vitalsFlag(low); if(v) return v;      // a number can be an emergency on its own
   for(const rf of DB.redFlagKeywords){ for(const k of rf.k){ if(low.includes(k)) return rf.id; } }
-  return patternFlag(low);
+  return p;
+}
+
+/* Read "30 M", "30, male", "45/F", "f 22", "28 साल पुरुष" etc. from one answer.
+   Returns nulls for whatever it couldn't read, so the flow can ask just that part. */
+function parseAgeSex(txt){
+  const low=String(txt||"").toLowerCase();
+  let age=null, sex=null;
+  const am=/\b(\d{1,3})\b/.exec(low);
+  if(am){ const n=+am[1]; if(n>=0 && n<=120) age=n; }
+  const male   =/(^|[^a-z])(m|male|man|boy|मेल|पुरुष|लड़का|aadmi|ladka|ஆண்|పురుషుడు|പുരുഷൻ)([^a-z]|$)/;
+  const female =/(^|[^a-z])(f|female|woman|girl|lady|फीमेल|महिला|स्त्री|औरत|लड़की|aurat|ladki|பெண்|స్త్రీ|സ്ത്രീ)([^a-z]|$)/;
+  const other  =/(^|[^a-z])(o|other|trans|non.?binary|अन्य|மற்ற|ఇతర|മറ്റ്)([^a-z]|$)/;
+  if(female.test(low))      sex="F";     // test female first: "female" contains "male"
+  else if(male.test(low))   sex="M";
+  else if(other.test(low))  sex="O";
+  return {age, sex};
+}
+
+/* Numbers people quote in passing are often the most important thing they've said.
+   "my cuff reads 195/115" is a hypertensive emergency whatever they think it is. */
+function vitalsFlag(low){
+  // blood pressure written as 195/115, 195 / 115, "bp 195 over 115"
+  const bp=/\b(\d{2,3})\s*(?:\/|over)\s*(\d{2,3})\b/g;
+  let m;
+  while((m=bp.exec(low))!==null){
+    const sys=+m[1], dia=+m[2];
+    if(sys>=60 && sys<=300 && dia>=30 && dia<=200 && sys>dia){   // sanity-check it really is a BP
+      if(sys>=180 || dia>=120) return "hypertensive_crisis";
+    }
+  }
+  // temperature quoted in the narrative
+  const tm=/\b(\d{2,3}(?:\.\d)?)\s*(?:°|deg(?:rees)?\s*)?f\b/.exec(low);
+  if(tm){ const f=parseFloat(tm[1]); if(f>=106 && f<=115) return "breathing"; }
+  const tc=/\b(\d{2}(?:\.\d)?)\s*(?:°|deg(?:rees)?\s*)?c\b/.exec(low);
+  if(tc){ const c=parseFloat(tc[1]); if(c>=41 && c<=46) return "breathing"; }
+  // oxygen saturation
+  const spo2=/\b(?:spo2|oxygen|sat(?:uration)?s?)\D{0,12}(\d{2,3})\s*%?/.exec(low);
+  if(spo2){ const o=+spo2[1]; if(o>=50 && o<=94) return "breathing"; }
+  return null;
 }
 /* Combination red flags: fires only when every `need` group has a hit.
    Catches things no single phrase reveals — e.g. appendicitis is "started near
@@ -430,8 +476,13 @@ async function startConsult(){
   const w=await chips([t("who_self"),t("who_child"),t("who_elder"),t("who_other")]);
   S.who=["self","child","elder","other"][w.idx];
   await addBot(t("q_agesex"),450);
-  const av=await askText(t("age_ph")); S.age=parseInt(av)||null;
-  const sx=await chips([t("sex_m"),t("sex_f"),t("sex_o")]); S.sex=["M","F","O"][sx.idx];
+  /* One question, not two: most people type "30 M" naturally. Only fall back to
+     asking separately when the answer genuinely can't be read. */
+  const av=await askText(t("agesex_ph"));
+  const got=parseAgeSex(av);
+  S.age=got.age; S.sex=got.sex;
+  if(!S.age){ const a2=await askText(t("age_ph")); S.age=parseInt(a2)||null; }
+  if(!S.sex){ const sx=await chips([t("sex_m"),t("sex_f"),t("sex_o")]); S.sex=["M","F","O"][sx.idx]; }
   if(S.sex==="F" && S.age && S.age>=12 && S.age<=55){
     await addBot(t("q_preg"),400); const p=await chips([t("yes"),t("no")]); S.preg=p.idx===0; }
   S.step="complaint";
