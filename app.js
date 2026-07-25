@@ -38,6 +38,7 @@ function newSession(){
   S = { step:"welcome", who:null, age:null, sex:null, preg:false, complaint:"", dur:null, sev:null,
         temp:null, feverKind:null, pains:[], dqi:0, dqAnswers:[], allergies:[], allergyOther:"",
         conds:[], meds:"", cond:null, scores:{}, emergency:null, labFindings:null, labRaw:"",
+        symptoms:[], extracted:[], llmHint:null,
         transcript:[], id:"dx"+Date.now(), date:new Date().toLocaleDateString("en-GB"), reportReady:false };
 }
 
@@ -101,6 +102,17 @@ let pendingText=null, activeChips=null;
 function keywordFlag(text){
   const low=" "+text.toLowerCase()+" ";
   for(const rf of DB.redFlagKeywords){ for(const k of rf.k){ if(low.includes(k)) return rf.id; } }
+  return patternFlag(low);
+}
+/* Combination red flags: fires only when every `need` group has a hit.
+   Catches things no single phrase reveals — e.g. appendicitis is "started near
+   my navel, moved to the lower right, worse when I cough". */
+function patternFlag(low){
+  const hay = typeof low==="string" ? (low.startsWith(" ")?low:" "+low.toLowerCase()+" ") : "";
+  if(!hay || !DB.redFlagPatterns) return null;
+  for(const rule of DB.redFlagPatterns){
+    if(rule.need.every(group => group.some(term => hay.includes(term)))) return rule.id;
+  }
   return null;
 }
 async function emergencyStop(id){
@@ -138,6 +150,8 @@ function scoreConditions(){
   S.pains.forEach(p=>{ (DB_PAIN_MAP[p]||[]).forEach(cid=>{ if(cid!=="CHEST_SPECIAL") sc[cid]=(sc[cid]||0)+2; }); });
   if(S.temp && S.temp>=100.4){ sc.fever=(sc.fever||0)+2; sc.flu=(sc.flu||0)+1; }
   if(S.feverKind==="warm"){ sc.fever=(sc.fever||0)+1; }
+  // the narrative reader's opinion counts, but doesn't override a strong keyword match
+  if(S.llmHint) sc[S.llmHint]=(sc[S.llmHint]||0)+3;
   S.scores=sc;
   let best=null,bs=0; for(const id in sc){ if(sc[id]>bs){ bs=sc[id]; best=id; } }
   if(!best || bs===0) best="generic";
@@ -208,6 +222,63 @@ async function llmClassify(text){
   return null;
 }
 
+/* Read a free-text narrative and pull out the details the person already gave us,
+   so we don't interrogate them about things they've just told us. Returns {} if the
+   router is unavailable — the flow then simply asks every question as before. */
+async function llmExtract(text){
+  if(!CONFIG.LLM_ENDPOINT || !text || text.length<25) return {};
+  try{
+    const key="docto_ex_"+text.toLowerCase().trim().replace(/\s+/g," ").slice(0,90);
+    const cached=localStorage.getItem(key); if(cached) return JSON.parse(cached);
+    const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),12000);
+    const resp=await fetch(CONFIG.LLM_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({mode:"extract", text,
+        conds:DB.conds.filter(c=>c.id!=="generic").map(c=>c.id+"="+c.nm),
+        flags:Object.keys(DB.emergencyAdvice),
+        areas:Object.keys(DB_PAIN_MAP)}),
+      signal:ctrl.signal});
+    clearTimeout(to);
+    if(!resp.ok) return {};
+    const j=await resp.json();
+    if(j && typeof j==="object"){ try{localStorage.setItem(key,JSON.stringify(j));}catch(e){} return j; }
+  }catch(e){ /* offline or router down — every question gets asked, nothing breaks */ }
+  return {};
+}
+
+/* Copy extracted values into the session. Only fills blanks — never overwrites
+   something the person explicitly answered. */
+function applyExtract(ex){
+  const filled=[];
+  if(ex.duration && !S.dur){ S.dur=ex.duration; filled.push("dur"); }
+  if(ex.severity && !S.sev){ S.sev=ex.severity; filled.push("sev"); }
+  if(ex.temp_f && !S.temp){ S.temp=ex.temp_f; S.feverKind="meas"; filled.push("temp"); }
+  if(Array.isArray(ex.pain_areas) && ex.pain_areas.length && !S.pains.length){
+    S.pains=ex.pain_areas.slice(); filled.push("pain"); }
+  if(Array.isArray(ex.symptoms) && ex.symptoms.length) S.symptoms=ex.symptoms.slice();
+  S.extracted=filled;
+  return filled;
+}
+
+/* Show the person what we understood, so a misreading is caught before it shapes
+   the assessment. */
+function recapHtml(){
+  const durTxt={today:t("dur_today"),days:t("dur_days"),week:t("dur_week"),weeks:t("dur_weeks")};
+  const rows=[];
+  if(S.dur)  rows.push([t("recapDur"),  durTxt[S.dur]||S.dur]);
+  if(S.sev)  rows.push([t("recapSev"),  S.sev+"/10"]);
+  if(S.temp) rows.push([t("recapTemp"), S.temp+"°F"]);
+  if(S.pains && S.pains.length){
+    const nm={head:t("pain_head"),eyes:t("pain_eye"),ear:t("pain_ear"),throat:t("pain_throat"),
+      chest:t("pain_chest"),upabd:t("pain_upabd"),lowabd:t("pain_lowabd"),back:t("pain_back"),
+      joints:t("pain_joint"),muscles:t("pain_muscle"),skin:t("pain_skin"),urinary:t("pain_urine"),teeth:t("pain_teeth")};
+    rows.push([t("recapPain"), S.pains.map(p=>nm[p]||p).join(", ")]);
+  }
+  if(S.symptoms && S.symptoms.length) rows.push([t("recapSym"), S.symptoms.join(", ")]);
+  if(!rows.length) return "";
+  return `<b>${t("recapTitle")}</b><ul class="recap">`+
+    rows.map(r=>`<li><span>${esc(r[0])}</span> ${esc(r[1])}</li>`).join("")+`</ul>`;
+}
+
 /* ---------------- assessment ---------------- */
 async function assess(){
   S.cond = scoreConditions();
@@ -255,23 +326,51 @@ async function flow(input){
     case "complaint": {
       S.complaint=input;
       const rf=keywordFlag(input); if(rf){ await emergencyStop(rf); return; }
+
+      /* If they wrote a proper description, read it first and skip what they've
+         already told us. A long narrative followed by ten questions they just
+         answered is the fastest way to make someone abandon the consultation. */
+      if(input.length>=25){
+        typing(true); const ex=await llmExtract(input); typing(false);
+        if(ex.red_flag && DB.emergencyAdvice[ex.red_flag]){ await emergencyStop(ex.red_flag); return; }
+        if(ex.id){ const c2=DB.conds.find(c=>c.id===ex.id); if(c2){ S.llmHint=c2.id; } }
+        const filled=applyExtract(ex);
+        if(filled.length){
+          await addBot(recapHtml(),450);
+          const ok=await chips([t("recapYes"),t("recapNo")]);
+          if(ok.idx===1){ S.dur=null; S.sev=null; S.temp=null; S.feverKind=null; S.pains=[]; S.extracted=[]; }
+        }
+      }
+
       S.step="duration";
-      await addBot(t("q_duration"),500);
-      const d=await chips([t("dur_today"),t("dur_days"),t("dur_week"),t("dur_weeks")]);
-      S.dur=["today","days","week","weeks"][d.idx];
-      S.step="severity"; await addBot(t("q_severity"),450);
-      const sv=await askText(t("sev_hint")); S.sev=Math.max(1,Math.min(10,parseInt(sv)||5));
-      if(S.sev>=9){ const conf=await chips(["Sudden & the worst I've ever had","Bad but building up gradually"]);
+      if(!S.dur){
+        await addBot(t("q_duration"),500);
+        const d=await chips([t("dur_today"),t("dur_days"),t("dur_week"),t("dur_weeks")]);
+        S.dur=["today","days","week","weeks"][d.idx];
+      }
+      S.step="severity";
+      if(!S.sev){
+        await addBot(t("q_severity"),450);
+        const sv=await askText(t("sev_hint")); S.sev=Math.max(1,Math.min(10,parseInt(sv)||5));
+      }
+      if(S.sev>=9){ await addBot(t("q_severe_kind"),450);
+        const conf=await chips([t("sev_sudden"),t("sev_gradual")]);
         if(conf.idx===0){ await emergencyStop(S.pains.includes("head")?"headache_worst":"acute_abdomen"); return; } }
-      S.step="fever"; await addBot(t("q_fever"),450);
-      const f=await chips([t("fever_no"),t("fever_warm"),t("fever_meas")]);
-      if(f.idx===2){ const tv=await askText(t("temp_ph")); S.temp=parseFloat(tv)||null; S.feverKind="meas";
-        if(S.temp && S.temp>=105){ await emergencyStop("breathing"); return; } }
-      else if(f.idx===1){ S.feverKind="warm"; }
-      S.step="pain"; await addBot(t("q_pain"),450);
+      S.step="fever";
+      if(!S.temp && !S.feverKind){
+        await addBot(t("q_fever"),450);
+        const f=await chips([t("fever_no"),t("fever_warm"),t("fever_meas")]);
+        if(f.idx===2){ const tv=await askText(t("temp_ph")); S.temp=parseFloat(tv)||null; S.feverKind="meas"; }
+        else if(f.idx===1){ S.feverKind="warm"; }
+      }
+      if(S.temp && S.temp>=105){ await emergencyStop("breathing"); return; }
+      S.step="pain";
       const P=[["none",t("pain_none")],["head",t("pain_head")],["eyes",t("pain_eye")],["ear",t("pain_ear")],["throat",t("pain_throat")],["chest",t("pain_chest")],["upabd",t("pain_upabd")],["lowabd",t("pain_lowabd")],["back",t("pain_back")],["joints",t("pain_joint")],["muscles",t("pain_muscle")],["skin",t("pain_skin")],["urinary",t("pain_urine")],["teeth",t("pain_teeth")]];
-      const pr=await chips(P.map(x=>x[1]),{multi:true,doneLabel:t("continueBtn")});
-      S.pains=pr.idxs.map(i=>P[i][0]).filter(x=>x!=="none");
+      if(!S.pains.length){
+        await addBot(t("q_pain"),450);
+        const pr=await chips(P.map(x=>x[1]),{multi:true,doneLabel:t("continueBtn")});
+        S.pains=pr.idxs.map(i=>P[i][0]).filter(x=>x!=="none");
+      }
       if(S.pains.includes("chest")){
         await addBot(t("chest_q"),500);
         const cq=await chips([t("chest_cardiac"),t("chest_other")]);

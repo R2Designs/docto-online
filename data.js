@@ -23,6 +23,71 @@ redFlagKeywords: [
  {k:["snake bite","poison","overdose","zeher"], id:"poison"},
  {k:["testicle sudden pain"], id:"torsion"}
 ],
+
+/* ---------- PATTERN RED FLAGS ----------
+   Some emergencies have no single give-away phrase — they're a *combination*.
+   Classic appendicitis, for instance, is pain that starts near the navel and
+   migrates to the right lower abdomen, worse on walking/coughing, with nausea
+   and a low fever. No individual word there is alarming; the pattern is.
+
+   Each rule fires only when EVERY group in `need` has at least one hit in the
+   text. Several rules may share an id (different routes to the same emergency). */
+redFlagPatterns: [
+ /* Appendicitis — route 1: right-lower-quadrant pain + migration/movement pain */
+ {id:"appendicitis", need:[
+   ["lower right","lower-right","right lower","right side of my abdomen","right side of abdomen",
+    "right side abdomen","right iliac","rlq","right groin","pet ke dayin","pet ke daayin",
+    "daayin taraf pet","right abdomen","right-side abdomen"],
+   ["moved","shifted","migrat","started near my belly button","near my belly button","near the navel",
+    "around the navel","around my navel","umbilic","nabhi","worse when i walk","worse on walking",
+    "when i walk","when i cough","on coughing","when i cough or move","hurts to move","rebound",
+    "worse when i move","speed bump","jumping"]
+ ]},
+ /* Appendicitis — route 2: right-lower-quadrant pain + fever + nausea/vomiting */
+ {id:"appendicitis", need:[
+   ["lower right","lower-right","right lower","right side of my abdomen","right side of abdomen",
+    "right side abdomen","right iliac","rlq","pet ke dayin","pet ke daayin","daayin taraf pet"],
+   ["fever","temperature","bukhar","100.","101","102","103"],
+   ["nausea","nauseous","vomit","ulti","throwing up","no appetite","loss of appetite"]
+ ]},
+ /* Bowel obstruction — pain + vomiting + nothing passing */
+ {id:"obstruction", need:[
+   ["abdominal pain","stomach pain","pet dard","pet me dard","belly pain","tummy pain","abdomen pain"],
+   ["vomit","ulti","throwing up"],
+   ["no stool","not passing stool","no gas","not passing gas","cannot pass gas","no motion",
+    "constipated for","bloated and hard","distended","swollen belly","pet phool"]
+ ]},
+ /* Ectopic pregnancy — one-sided lower abdominal pain + missed period/pregnancy */
+ {id:"ectopic", need:[
+   ["lower abdomen","lower abdominal","one side pain","pelvic pain","pet ke niche","lower belly"],
+   ["missed period","late period","periods missed","pregnant","pregnancy","positive test","garbh"],
+   ["pain","bleeding","spotting","dizzy","faint","shoulder pain"]
+ ]},
+ /* Meningitis — fever with neck stiffness / light intolerance / rash */
+ {id:"meningitis", need:[
+   ["fever","bukhar","temperature"],
+   ["stiff neck","neck stiff","cannot touch chin","neck pain and fever","gardan akad"],
+   ["headache","light hurts","photophobia","rash","confus","drowsy","vomit"]
+ ]},
+ /* Diabetic emergency — high sugar with vomiting/rapid breathing/extreme thirst */
+ {id:"dka", need:[
+   ["diabet","sugar is high","high sugar","blood sugar","shugar"],
+   ["vomit","deep breathing","rapid breathing","breathless","very thirsty","excessive thirst",
+    "drowsy","confus","fruity breath","stomach pain"]
+ ]},
+ /* Severe dehydration — many loose stools/vomits + not passing urine / dizzy on standing */
+ {id:"dehydration", need:[
+   ["loose motion","diarrhea","diarrhoea","dast","vomiting many","vomited many","many times"],
+   ["not passing urine","no urine","very little urine","peshab nahi","dizzy when standing",
+    "dizzy on standing","cannot keep anything down","sunken eyes","very weak","dry mouth and dizzy"]
+ ]},
+ /* Pre-eclampsia — pregnancy + headache/vision change/swelling/upper-abdominal pain */
+ {id:"preeclampsia", need:[
+   ["pregnan","garbh","expecting"],
+   ["headache","blurred vision","seeing spots","swelling of face","swollen hands","upper abdominal pain",
+    "pain under ribs","sudden swelling"]
+ ]}
+],
 emergencyAdvice: {
  cardiac:"Chest pain/pressure — especially with sweating, breathlessness, or pain spreading to arm/jaw — can be a heart attack.",
  breathing:"Severe difficulty breathing needs emergency care now.",
@@ -38,6 +103,12 @@ emergencyAdvice: {
  anaphylaxis:"Swelling of lips/tongue/throat or hives with breathlessness is anaphylaxis. Use an adrenaline pen if available.",
  preg_bleed:"Bleeding or severe pain in pregnancy needs emergency obstetric care.",
  acute_abdomen:"Severe or rigid abdominal pain can be appendicitis/obstruction.",
+ appendicitis:"What you're describing fits appendicitis — pain that begins near the navel and settles in the lower right abdomen, worse on walking or coughing, with nausea and a mild fever. This needs a surgeon's assessment today, not painkillers at home. Go to a hospital emergency department now. On the way: nothing to eat or drink (you may need surgery), no painkillers (they mask the picture and delay diagnosis), and absolutely no laxatives or enemas — they can rupture an inflamed appendix. A delay of a day risks perforation.",
+ obstruction:"Abdominal pain with vomiting and no stool or gas passing suggests a bowel obstruction. Go to hospital now. Nothing by mouth on the way, and no laxatives.",
+ ectopic:"One-sided lower abdominal pain with a missed or late period can be an ectopic pregnancy, which can bleed internally. This is an emergency — go to a hospital with gynaecology/emergency care now, even if the pain eases.",
+ dka:"High blood sugar with vomiting, deep or rapid breathing, extreme thirst or drowsiness can be diabetic ketoacidosis. Go to hospital now. Sip water on the way; do not skip your insulin unless a doctor tells you to.",
+ dehydration:"Repeated loose stools or vomiting with very little urine, dizziness on standing, or an inability to keep fluids down means significant dehydration. Start ORS in small frequent sips right away, and go to a hospital — you may need IV fluids, especially if this is a child or an elderly person.",
+ preeclampsia:"In pregnancy, a persistent headache, blurred vision or seeing spots, sudden swelling of the face or hands, or pain under the ribs can signal pre-eclampsia. Go to your maternity hospital now for a blood-pressure and urine check — this can progress quickly.",
  poison:"Suspected poisoning/overdose/bite — emergency now. Do not induce vomiting.",
  torsion:"Sudden severe testicular pain is an emergency (torsion)."
 },

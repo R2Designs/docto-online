@@ -118,6 +118,11 @@ select#langSel{-webkit-appearance:none;appearance:none;border:1px solid var(--li
 .bub li{margin:8px 0;padding-left:22px;position:relative;color:var(--ink2);}
 .bub li::before{content:"";position:absolute;left:5px;top:8px;width:6px;height:6px;border-radius:50%;background:var(--brand2);}
 .bub .badges{display:flex;flex-wrap:wrap;gap:7px;margin:2px 0 4px;}
+/* read-back of what the narrative reader understood */
+.bub ul.recap{list-style:none;margin:8px 0 2px;padding:0;display:grid;gap:6px;}
+.bub ul.recap li{display:flex;gap:10px;align-items:baseline;background:var(--tint);
+  border-radius:10px;padding:7px 11px;font-size:14px;}
+.bub ul.recap li span{color:var(--brand-d);font-weight:600;min-width:88px;flex:none;}
 .bub .badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;background:var(--panel);border:1px solid var(--line);padding:5px 11px;border-radius:999px;color:var(--mut);font-weight:500;}
 .bub .badge.prim{background:var(--tint);border-color:var(--tint2);color:var(--brand-d);}
 .bub .badge b{color:var(--ink);font-weight:700;}
