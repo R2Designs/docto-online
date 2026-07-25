@@ -15,6 +15,21 @@ const BOT_AV='<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke
 const USER_AV='🙂';
 const CHAT=()=>document.getElementById("chatInner");
 const initial=()=> (USER && USER.name ? USER.name.trim().charAt(0).toUpperCase() : "?");
+const ICONS={
+ activity:'<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+ zap:'<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+ leaf:'<path d="M11 20A7 7 0 0 1 4 13C4 6 11 4 20 4c0 9-4 16-9 16z"/><path d="M4.5 19.5C8 17 10.5 13 11.5 8"/>',
+ clipboard:'<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/>',
+ shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+ alert:'<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+ download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+ clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+ file:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>',
+ trash:'<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+ eye:'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
+};
+function svg(n){ return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(ICONS[n]||"")+'</svg>'; }
+function sec(cls,name,title){ return '<h3 class="'+cls+'"><span class="hbadge">'+svg(name)+'</span>'+esc(title)+'</h3>'; }
 
 /* ---------------- session state ---------------- */
 let S = null;
@@ -162,27 +177,27 @@ function pickTests(){
 async function assess(){
   S.cond = scoreConditions();
   const c=S.cond, conf=confidence();
-  let html=`<h3>${t("assess_title")}</h3><span class="tag">${t("likely")}: <b>${esc(c.nm)}</b></span><span class="tag">${t("confidence")}: ${conf}</span>`;
+  let html=sec("s-assess","activity",t("assess_title"))+`<div class="badges"><span class="badge prim">${t("likely")}: <b>${esc(c.nm)}</b></span><span class="badge">${t("confidence")}: ${esc(conf)}</span></div>`;
   if(S.temp>=103) html+=`<div class="emg">Temperature ${S.temp}°F is high — start the fever plan now and see a doctor today if it doesn't come down.</div>`;
   // modern
-  html+=`<h3>${t("quick_title")}</h3><ul>`;
+  html+=sec("s-quick","zap",t("quick_title"))+`<ul>`;
   c.modern.forEach(m=>{ const chk=medAllowed(m);
     if(chk.ok){ html+=`<li>${esc(m.t)}${chk.why?` <i style="color:#a65c00">(${esc(chk.why)})</i>`:""}</li>`; }
     else html+=`<li style="color:#8a8a8a;text-decoration:line-through">${esc(m.t)}</li><li style="color:#a65c00">↳ Skipped: ${esc(chk.why)}.</li>`; });
   html+=`</ul>`;
   // ayurveda
-  html+=`<h3>${t("ayur_title")}</h3><ul>`; c.ayur.forEach(a=>html+=`<li>${esc(a)}</li>`); html+=`</ul>`;
+  html+=sec("s-ayur","leaf",t("ayur_title"))+`<ul>`; c.ayur.forEach(a=>html+=`<li>${esc(a)}</li>`); html+=`</ul>`;
   // personal notes
   const pn=personalNotes(); if(pn.length){ html+=`<ul>`; pn.forEach(n=>html+=`<li><i>${esc(n)}</i></li>`); html+=`</ul>`; }
   // tests
   const tests=pickTests();
-  if(tests.length){ html+=`<h3>${t("tests_title")}</h3><ul>`;
+  if(tests.length){ html+=sec("s-test","clipboard",t("tests_title"))+`<ul>`;
     tests.forEach(r=>{ html+=`<li><b>${r.tests.join(", ")}</b> — ${esc(r.why)}</li>`; }); html+=`</ul><p>📎 ${t("upload_prompt")}</p>`; }
   // doctor + escalation
-  html+=`<h3>${t("seedoc_title")}</h3><ul>`; c.seeDoc.forEach(x=>html+=`<li>${esc(x)}</li>`); html+=`</ul>`;
+  html+=sec("s-doc","shield",t("seedoc_title"))+`<ul>`; c.seeDoc.forEach(x=>html+=`<li>${esc(x)}</li>`); html+=`</ul>`;
   html+=`<p><b>${t("doctor_see")}:</b> ${esc(c.doctor)}</p>`;
-  if(c.emerg && c.emerg.length){ html+=`<h3 style="color:var(--red)">${t("emerg_title")}</h3><ul>`; c.emerg.forEach(x=>html+=`<li>${esc(x)}</li>`); html+=`</ul>`; }
-  html+=`<div class="chipRowBtn"><button class="bigBtn" onclick="makeReport()">📄 ${t("report_btn")}</button></div>`;
+  if(c.emerg && c.emerg.length){ html+=sec("s-emerg","alert",t("emerg_title"))+`<ul>`; c.emerg.forEach(x=>html+=`<li>${esc(x)}</li>`); html+=`</ul>`; }
+  html+=`<div class="chipRowBtn"><button class="bigBtn" onclick="makeReport()">${svg("download")} ${t("report_btn")}</button></div>`;
   await addBot(html, 1100);
   S.reportReady=true; S.step="post";
   saveHistory(); renderHistory();
@@ -339,13 +354,13 @@ function analyseLabs(text){
       if(/positive|reactive|detected/.test(ln) && !/negative|non[- ]?reactive|not detected/.test(ln)){ qual.push(q); } break; } }
   });
   S.labFindings={found,abnormal,qual};
-  let html=`<h3>${t("final_title")}</h3>`;
+  let html=sec("s-assess","file",t("final_title"));
   if(!found.length && !qual.length){ html+=`<p>${t("report_none")}</p>`; }
   else{
     html+=`<p>${t("report_found")}</p><table><tr><th>Test</th><th>Value</th><th>Normal</th><th>Status</th></tr>`;
-    found.forEach(f=>{ html+=`<tr><td>${f.lt.key.toUpperCase()}</td><td>${f.v} ${f.lt.unit}</td><td>${f.lt.low}–${f.lt.high}</td><td class="${f.stat==="OK"?"okv":""}" style="${f.stat!=="OK"?"color:var(--red);font-weight:600":""}">${f.stat}</td></tr>`; });
+    found.forEach(f=>{ html+=`<tr><td>${f.lt.key.toUpperCase()}</td><td>${f.v} ${f.lt.unit}</td><td>${f.lt.low}–${f.lt.high}</td><td class="${f.stat==="OK"?"st-ok":"st-hi"}">${f.stat}</td></tr>`; });
     html+=`</table>`;
-    if(abnormal.length){ html+=`<h3>${t("abnormal_vals")}</h3><ul>`;
+    if(abnormal.length){ html+=sec("s-test","alert",t("abnormal_vals"))+`<ul>`;
       abnormal.forEach(a=>{ if(a.msg) html+=`<li><b>${a.lt.key.toUpperCase()} ${a.stat}</b> — ${esc(a.msg)}</li>`; }); html+=`</ul>`; }
     else if(found.length) html+=`<p class="okv">✓ ${t("normal_vals")}.</p>`;
     if(qual.length){ html+=`<ul>`; qual.forEach(q=>html+=`<li class="emg">${esc(q.posMsg)}</li>`); html+=`</ul>`; }
@@ -353,7 +368,7 @@ function analyseLabs(text){
     const plt=found.find(f=>f.lt.key==="platelet");
     if(plt && plt.v<100000){ html+=`<div class="emg">Platelets below 1 lakh — go to a hospital today for monitoring.</div>`; }
   }
-  html+=`<div class="chipRowBtn"><button class="bigBtn" onclick="makeReport()">📄 ${t("report_btn")}</button></div>`;
+  html+=`<div class="chipRowBtn"><button class="bigBtn" onclick="makeReport()">${svg("download")} ${t("report_btn")}</button></div>`;
   addBot(html,700).then(()=>{ saveHistory(); renderHistory(); });
 }
 
@@ -421,11 +436,13 @@ function saveHistory(){
 function renderHistory(){
   const list=JSON.parse(localStorage.getItem(historyKey())||"[]");
   const el=$("histList"); el.innerHTML="";
-  if(!list.length){ el.innerHTML=`<div id="histEmpty">${t("noHistory")}</div>`; return; }
+  if(!list.length){ el.innerHTML=`<div id="histEmpty"><div class="eic">${svg("file")}</div><p>${t("noHistory")}</p></div>`; return; }
   list.forEach(item=>{
     const d=document.createElement("div"); d.className="histCard";
-    d.innerHTML=`<h4>${esc(item.title)} <small>${esc(item.date)}</small></h4><p>${esc(item.complaint)}</p>
-    <div class="rowBtns"><button class="op">${t("view")}</button><button class="del">${t("delete")}</button></div>`;
+    d.innerHTML=`<div class="htop"><span class="hicon">${svg("file")}</span><h4>${esc(item.title)}</h4></div>
+    <div class="hdate">${svg("clock")}${esc(item.date)}</div>
+    <p>${esc(item.complaint)}</p>
+    <div class="rowBtns"><button class="op">${svg("eye")}${t("view")}</button><button class="del">${svg("trash")}${t("delete")}</button></div>`;
     d.querySelector(".op").onclick=e=>{ e.stopPropagation(); openHistory(item); };
     d.querySelector(".del").onclick=e=>{ e.stopPropagation();
       const l2=JSON.parse(localStorage.getItem(historyKey())||"[]").filter(x=>x.id!==item.id);
@@ -445,7 +462,7 @@ function applyLang(){
   localStorage.setItem("docto_lang",LANG);
   { const nb=$("newBtnTxt"); if(nb) nb.textContent=t("newLabel"); }
   $("histTitle").textContent=t("history");
-  $("pageTitle").textContent=t("newAilment");
+  $("pageTitle").textContent=t("consultTitle");
   { const ps=$("pageSub"); if(ps) ps.textContent=t("pageSub"); }
   $("inp").placeholder=t("inputPh"); $("attach").title=t("attachTip");
   $("micro").textContent=t("disclaimer");

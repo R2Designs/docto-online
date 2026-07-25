@@ -43,7 +43,7 @@ en: {
  sev_hint:"Type a number 1–10", years:"years", langName:"English",
  hintTap:"Type your answer, or tap an option above…", hintMulti:"Tap the options above, then Continue — or type to pick…",
  chipMiss:"I didn't catch that — please tap one of the options above 👆, or rephrase.", newLabel:"New ailment",
- pageSub:"A few quick questions for a clear, personalised plan."
+ pageSub:"A few quick questions for a clear, personalised plan.", consultTitle:"New consultation"
 },
 hi: {
  appName:"डॉक्टो", appName2:"ऑनलाइन", tagline:"आपकी सेहत का पहला दोस्ताना कदम",
