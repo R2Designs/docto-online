@@ -40,7 +40,10 @@ en: {
  askMore:"You can ask me follow-up questions, upload a report 📎, or download the report below.",
  childNote:"For children, doses must be weight-based — I'll keep advice general and please confirm medicines with a pediatrician/pharmacist.",
  pregNote:"Since pregnancy/breastfeeding is possible, I'm restricting medicines to the safest options (mainly paracetamol) — please confirm anything else with your doctor.",
- sev_hint:"Type a number 1–10", years:"years", langName:"English"
+ sev_hint:"Type a number 1–10", years:"years", langName:"English",
+ hintTap:"Type your answer, or tap an option above…", hintMulti:"Tap the options above, then Continue — or type to pick…",
+ chipMiss:"I didn't catch that — please tap one of the options above 👆, or rephrase.", newLabel:"New ailment",
+ pageSub:"A few quick questions for a clear, personalised plan."
 },
 hi: {
  appName:"डॉक्टो", appName2:"ऑनलाइन", tagline:"आपकी सेहत का पहला दोस्ताना कदम",

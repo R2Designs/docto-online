@@ -150,11 +150,11 @@ conds: [
  sys:"resp", doctor:"General physician / ENT",
  dq:[{q:"What's the mucus like?",opts:["Clear & watery","Thick yellow/green","Mostly blocked, little mucus"]}],
  modern:[
-  {t:"Steam inhalation 2–3×/day; saline nasal drops/spray any time — safest decongestion."},
-  {t:"Cetirizine 10 mg at night for runny nose/sneezing (may cause mild drowsiness).", f:"sed"},
-  {t:"Paracetamol 500–650 mg after food for headache/body ache, max 4/day.", f:"pcm"},
-  {t:"Decongestant nasal spray (oxymetazoline) max 3 days only, if badly blocked.", f:"decong"},
-  {t:"Warm salt-water gargles if throat is scratchy. Zinc lozenges started day 1 may shorten the cold."}],
+  {t:"A cold is viral — it clears on its own in about a week. The goal is comfort, not a pile of pills: rest and plenty of warm fluids do most of the work."},
+  {t:"First-line (safest and genuinely effective): steam inhalation 2–3×/day, saline nasal drops, and a warm salt-water gargle if the throat is scratchy."},
+  {t:"Add a medicine ONLY if a symptom is really bothering you — and just the one that fits: paracetamol 500–650 mg after food for body ache or mild fever (max 4/day).", f:"pcm"},
+  {t:"…or cetirizine 10 mg at night, only if a runny nose/sneezing is the main problem (may cause mild drowsiness).", f:"sed"},
+  {t:"Please avoid antibiotics (useless against a cold) and don't stack several cold/decongestant products together."}],
  ayur:[
   "Classic kadha: tulsi 5 leaves + ginger + 4 black peppercorns boiled, add honey when warm — 2–3×/day.",
   "Turmeric milk (haldi doodh) at bedtime.",

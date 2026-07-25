@@ -11,6 +11,10 @@ let USER = JSON.parse(localStorage.getItem("docto_user") || "null");
 const t = k => (I18N[LANG] && I18N[LANG][k]) || I18N.en[k] || k;
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const BOT_AV='<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v6a6 6 0 0 0 12 0V3"/><circle cx="12" cy="17" r="3"/></svg>';
+const USER_AV='🙂';
+const CHAT=()=>document.getElementById("chatInner");
+const initial=()=> (USER && USER.name ? USER.name.trim().charAt(0).toUpperCase() : "?");
 
 /* ---------------- session state ---------------- */
 let S = null;
@@ -25,15 +29,15 @@ function newSession(){
 function scroll_(){ const c=$("chat"); c.scrollTop=c.scrollHeight; }
 function bubble(html, who){
   const row=document.createElement("div"); row.className="row "+who;
-  row.innerHTML = `<div class="av">${who==="bot"?"🩺":"🙂"}</div><div class="bub">${html}</div>`;
-  $("chat").appendChild(row); scroll_(); return row.querySelector(".bub");
+  row.innerHTML = `<div class="av">${who==="bot"?BOT_AV:('<b style="color:#0f766e">'+initial()+'</b>')}</div><div class="bub">${html}</div>`;
+  CHAT().appendChild(row); scroll_(); return row.querySelector(".bub");
 }
 function addUser(txt){ bubble(esc(txt),"user"); S && S.transcript.push({u:txt}); }
 let typingRow=null;
 function typing(on){
   if(on){ typingRow=document.createElement("div"); typingRow.className="row bot";
-    typingRow.innerHTML=`<div class="av">🩺</div><div class="bub"><span class="dots"><span></span><span></span><span></span></span></div>`;
-    $("chat").appendChild(typingRow); scroll_();
+    typingRow.innerHTML=`<div class="av">${BOT_AV}</div><div class="bub"><span class="dots"><span></span><span></span><span></span></span></div>`;
+    CHAT().appendChild(typingRow); scroll_();
   } else if(typingRow){ typingRow.remove(); typingRow=null; }
 }
 function addBot(html, delay=650){
@@ -45,25 +49,37 @@ function chips(list, {multi=false, doneLabel="OK"}={}){
   return new Promise(res=>{
     const wrap=document.createElement("div"); wrap.className="row bot";
     const inner=document.createElement("div"); inner.className="bub"; wrap.appendChild(inner);
-    const avatar=document.createElement("div"); avatar.className="av"; avatar.textContent="🩺"; wrap.prepend(avatar);
+    const avatar=document.createElement("div"); avatar.className="av"; avatar.innerHTML=BOT_AV; wrap.prepend(avatar);
     const box=document.createElement("div"); box.className="chips"; inner.appendChild(box);
-    const sel=new Set();
+    const sel=new Set(); const btns=[]; let okBtn=null;
+    function toggle(i){ const b=btns[i]; if(sel.has(i)){sel.delete(i);b.classList.remove("sel");} else {sel.add(i);b.classList.add("sel");} }
+    function finishSingle(i){ btns.forEach(x=>x.classList.add("done")); btns[i].classList.add("sel");
+      addUser(list[i]); activeChips=null; resetHint(); res({idx:i,label:list[i]}); }
+    function finishMulti(){ const arr=[...sel]; btns.forEach(x=>x.classList.add("done")); if(okBtn) okBtn.style.display="none";
+      addUser(arr.length?arr.map(i=>list[i]).join(", "):"—"); activeChips=null; resetHint(); res({idxs:arr,labels:arr.map(i=>list[i])}); }
     list.forEach((c,i)=>{ const b=document.createElement("button"); b.className="chip"; b.textContent=c;
-      b.onclick=()=>{ if(multi){ b.classList.toggle("sel"); sel.has(i)?sel.delete(i):sel.add(i); }
-        else { box.querySelectorAll(".chip").forEach(x=>x.classList.add("done")); b.classList.add("sel");
-          addUser(c); wrap.remove(); res({idx:i,label:c}); } };
-      box.appendChild(b); });
-    if(multi){ const ok=document.createElement("div"); ok.className="chipRowBtn";
-      const btn=document.createElement("button"); btn.className="bigBtn"; btn.textContent=doneLabel;
-      btn.onclick=()=>{ const arr=[...sel]; const labels=arr.map(i=>list[i]);
-        addUser(labels.length?labels.join(", "):"—"); wrap.remove(); res({idxs:arr,labels}); };
-      ok.appendChild(btn); inner.appendChild(ok); }
-    $("chat").appendChild(wrap); scroll_();
+      b.onclick=()=> multi ? toggle(i) : finishSingle(i); box.appendChild(b); btns.push(b); });
+    if(multi){ const w=document.createElement("div"); w.className="chipRowBtn";
+      okBtn=document.createElement("button"); okBtn.className="bigBtn"; okBtn.textContent=doneLabel;
+      okBtn.onclick=finishMulti; w.appendChild(okBtn); inner.appendChild(w); }
+    activeChips={ multi, selectByText(text){
+        const low=text.toLowerCase().trim();
+        let i=list.findIndex(o=>o.toLowerCase()===low);
+        if(i<0) i=list.findIndex(o=>{const ol=o.toLowerCase(); return ol.length>1 && (low.includes(ol)||ol.includes(low));});
+        if(i<0){ const toks=low.split(/[^a-z0-9]+/).filter(x=>x.length>2);
+          i=list.findIndex(o=>{const ol=o.toLowerCase(); return toks.some(tk=>ol.includes(tk));}); }
+        if(i<0) return false;
+        if(multi){ toggle(i); return true; } finishSingle(i); return true;
+      }, finishMulti };
+    setHint(multi);
+    CHAT().appendChild(wrap); scroll_();
   });
 }
-function askText(ph){ return new Promise(res=>{ const inp=$("inp"); inp.placeholder=ph||t("inputPh"); inp.focus();
-  pendingText = v=>{ res(v); }; }); }
-let pendingText=null;
+function setHint(multi){ const el=$("inp"); if(el) el.placeholder = multi ? t("hintMulti") : t("hintTap"); }
+function resetHint(){ const el=$("inp"); if(el) el.placeholder=t("inputPh"); }
+function askText(ph){ activeChips=null; return new Promise(res=>{ const inp=$("inp"); inp.placeholder=ph||t("inputPh"); inp.focus();
+  pendingText = v=>{ resetHint(); res(v); }; }); }
+let pendingText=null, activeChips=null;
 
 /* ---------------- red-flag engine ---------------- */
 function keywordFlag(text){
@@ -242,7 +258,7 @@ async function flow(input){
 
 /* ---------------- start conversation ---------------- */
 async function startConsult(){
-  $("chat").innerHTML=""; newSession();
+  CHAT().innerHTML=""; newSession();
   await addBot(t("welcome").replace("NAME", esc(USER?USER.name:"")),600);
   const w=await chips([t("who_self"),t("who_child"),t("who_elder"),t("who_other")]);
   S.who=["self","child","elder","other"][w.idx];
@@ -258,9 +274,12 @@ async function startConsult(){
 /* ---------------- input events ---------------- */
 $("send").onclick=submitInput; $("inp").addEventListener("keydown",e=>{ if(e.key==="Enter") submitInput(); });
 function submitInput(){
-  const v=$("inp").value.trim(); if(!v) return; $("inp").value=""; addUser(v);
-  if(pendingText){ const fn=pendingText; pendingText=null; fn(v); return; }
-  flow(v);
+  const v=$("inp").value.trim(); if(!v) return; $("inp").value="";
+  if(pendingText){ addUser(v); const fn=pendingText; pendingText=null; fn(v); return; }
+  if(activeChips){ const ok=activeChips.selectByText(v);
+    if(!ok){ addUser(v); addBot(t("chipMiss"),350); }
+    return; }
+  addUser(v); flow(v);
 }
 $("attach").onclick=()=>$("fileIn").click();
 $("fileIn").addEventListener("change",e=>{ const f=e.target.files[0]; if(f) handleReport(f); e.target.value=""; });
@@ -395,7 +414,7 @@ function saveHistory(){
   if(!S || !S.complaint) return;
   const list=JSON.parse(localStorage.getItem(historyKey())||"[]");
   const item={ id:S.id, date:S.date, title:(S.cond?S.cond.nm:"Consultation"), complaint:S.complaint,
-    chat:$("chat").innerHTML, state:JSON.stringify({...S, transcript:[]}) };
+    chat:CHAT().innerHTML, state:JSON.stringify({...S, transcript:[]}) };
   const ix=list.findIndex(x=>x.id===S.id); if(ix>=0) list[ix]=item; else list.unshift(item);
   localStorage.setItem(historyKey(), JSON.stringify(list.slice(0,40)));
 }
@@ -416,7 +435,7 @@ function renderHistory(){
   });
 }
 function openHistory(item){
-  $("chat").innerHTML=item.chat;
+  CHAT().innerHTML=item.chat;
   try{ S=JSON.parse(item.state); }catch(e){ newSession(); }
   S.step="post"; scroll_();
 }
@@ -424,8 +443,10 @@ function openHistory(item){
 /* ---------------- language ---------------- */
 function applyLang(){
   localStorage.setItem("docto_lang",LANG);
-  $("newBtn").textContent=t("startNew"); $("histTitle").textContent=t("history");
-  $("pageTitle").textContent=t("newAilment"); $("send").textContent=t("submit");
+  { const nb=$("newBtnTxt"); if(nb) nb.textContent=t("newLabel"); }
+  $("histTitle").textContent=t("history");
+  $("pageTitle").textContent=t("newAilment");
+  { const ps=$("pageSub"); if(ps) ps.textContent=t("pageSub"); }
   $("inp").placeholder=t("inputPh"); $("attach").title=t("attachTip");
   $("micro").textContent=t("disclaimer");
   $("lg1").textContent=t("appName"); $("lg2").textContent=t("appName2");
@@ -466,7 +487,7 @@ function initAuthUI(){
 function enterApp(){
   $("overlay").style.display="none";
   const chip=$("userChip");
-  chip.innerHTML=`${USER.pic?`<img src="${USER.pic}">`:"👤"} <span>${esc(USER.name)}</span> <button id="soBtn">${t("signout")}</button>`;
+  chip.innerHTML=`<span class="uAv">${esc(initial())}</span><span>${esc(USER.name)}</span><button id="soBtn">${t("signout")}</button>`;
   document.getElementById("soBtn").onclick=()=>{ localStorage.removeItem("docto_user"); location.reload(); };
   buildLangSel(); applyLang(); startConsult();
 }
