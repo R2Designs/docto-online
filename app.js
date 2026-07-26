@@ -62,7 +62,14 @@ function addBot(html, delay=650){
     setTimeout(()=>{ typing(false); bubble(html,"bot"); S && S.transcript.push({b:html}); res(); }, delay);
   });
 }
-function chips(list, {multi=false, doneLabel="OK"}={}){
+/* One interaction model for every question:
+     • tapping an option always works
+     • typing always works too (matched against the visible options)
+     • "None" is always a single tap that ends the question — never tap-then-confirm
+     • multi-select confirms with one button that says how many are chosen
+   Before this, "none" meant three different gestures depending on the question,
+   which is the kind of thing that makes people distrust the whole form. */
+function chips(list, {multi=false, doneLabel="OK", noneIdx=-1}={}){
   return new Promise(res=>{
     const wrap=document.createElement("div"); wrap.className="row bot";
     const inner=document.createElement("div"); inner.className="bub"; wrap.appendChild(inner);
@@ -77,20 +84,37 @@ function chips(list, {multi=false, doneLabel="OK"}={}){
       btns.forEach(x=>{ x.classList.add("done"); x.disabled=true; });
       if(okBtn) okBtn.disabled=true;
       if(document.activeElement && document.activeElement.blur) document.activeElement.blur(); }
+    function syncDone(){ if(!okBtn) return;
+      okBtn.textContent = sel.size ? doneLabel+" ("+sel.size+")" : t("noneOfThese"); }
     function toggle(i){ if(settled) return; const b=btns[i];
-      if(sel.has(i)){sel.delete(i);b.classList.remove("sel");} else {sel.add(i);b.classList.add("sel");} }
+      /* "None" is exclusive and immediate — choosing it can't coexist with other
+         answers, and making someone confirm "none" afterwards is pure friction. */
+      if(i===noneIdx){ finishMulti(true); return; }
+      if(noneIdx>=0 && sel.has(noneIdx)){ sel.delete(noneIdx); btns[noneIdx].classList.remove("sel"); }
+      if(sel.has(i)){sel.delete(i);b.classList.remove("sel");} else {sel.add(i);b.classList.add("sel");}
+      syncDone(); }
     function finishSingle(i){ if(settled) return; btns[i].classList.add("sel"); lockDown();
       addUser(list[i]); res({idx:i,label:list[i]}); }
-    function finishMulti(){ if(settled) return; const arr=[...sel]; lockDown();
+    function finishMulti(viaNone){ if(settled) return;
+      const arr = viaNone ? [] : [...sel];
+      if(viaNone && noneIdx>=0) btns[noneIdx].classList.add("sel");
+      lockDown();
       if(okBtn) okBtn.style.display="none";
-      addUser(arr.length?arr.map(i=>list[i]).join(", "):"—"); res({idxs:arr,labels:arr.map(i=>list[i])}); }
+      addUser(arr.length ? arr.map(i=>list[i]).join(", ")
+                         : (noneIdx>=0 ? list[noneIdx] : t("noneOfThese")));
+      res({idxs:arr,labels:arr.map(i=>list[i])}); }
     list.forEach((c,i)=>{ const b=document.createElement("button"); b.className="chip"; b.textContent=c;
       b.onclick=()=> multi ? toggle(i) : finishSingle(i); box.appendChild(b); btns.push(b); });
     if(multi){ const w=document.createElement("div"); w.className="chipRowBtn";
-      okBtn=document.createElement("button"); okBtn.className="bigBtn"; okBtn.textContent=doneLabel;
-      okBtn.onclick=finishMulti; w.appendChild(okBtn); inner.appendChild(w); }
+      okBtn=document.createElement("button"); okBtn.className="bigBtn";
+      okBtn.onclick=()=>finishMulti(false); w.appendChild(okBtn); inner.appendChild(w); syncDone(); }
     activeChips={ multi, selectByText(text){
         const low=text.toLowerCase().trim();
+        // typing "none" / "no" / "nothing" behaves exactly like tapping None
+        if(/^(none|no|nothing|nil|na|n\/a|koi nahi|kuch nahi)$/.test(low)){
+          if(multi){ finishMulti(true); return true; }
+          if(noneIdx>=0){ finishSingle(noneIdx); return true; }
+        }
         let i=list.findIndex(o=>o.toLowerCase()===low);
         if(i<0) i=list.findIndex(o=>{const ol=o.toLowerCase(); return ol.length>1 && (low.includes(ol)||ol.includes(low));});
         if(i<0){ const toks=low.split(/[^a-z0-9]+/).filter(x=>x.length>2);
@@ -104,8 +128,36 @@ function chips(list, {multi=false, doneLabel="OK"}={}){
 }
 function setHint(multi){ const el=$("inp"); if(el) el.placeholder = multi ? t("hintMulti") : t("hintTap"); }
 function resetHint(){ const el=$("inp"); if(el) el.placeholder=t("inputPh"); }
-function askText(ph){ activeChips=null; return new Promise(res=>{ const inp=$("inp"); inp.placeholder=ph||t("inputPh"); inp.focus();
-  pendingText = v=>{ resetHint(); res(v); }; }); }
+/* A typed question can also offer taps. "How bad is it, 1-10?" and "any regular
+   medicines?" were type-only, so the answer gesture changed halfway through the
+   consultation. Quick options make every question tappable while typing still
+   works — same model as chips, just with free text allowed. */
+function askText(ph, quick){
+  activeChips=null;
+  return new Promise(res=>{
+    const inp=$("inp");
+    let wrap=null, settled=false;
+    const finish=v=>{ if(settled) return; settled=true;
+      if(wrap) wrap.querySelectorAll("button").forEach(b=>{ b.classList.add("done"); b.disabled=true; });
+      pendingText=null; resetHint(); res(v); };
+    if(quick && quick.length){
+      wrap=document.createElement("div"); wrap.className="row bot";
+      const inner=document.createElement("div"); inner.className="bub";
+      const av=document.createElement("div"); av.className="av"; av.innerHTML=BOT_AV;
+      const box=document.createElement("div"); box.className="chips";
+      quick.forEach(q=>{ const b=document.createElement("button"); b.className="chip"; b.textContent=q.label;
+        b.onclick=()=>{ b.classList.add("sel"); addUser(q.label); finish(q.value); };
+        box.appendChild(b); });
+      inner.appendChild(box); wrap.appendChild(av); wrap.appendChild(inner);
+      CHAT().appendChild(wrap); scroll_();
+      inp.placeholder=t("hintTap");
+    } else {
+      inp.placeholder=ph||t("inputPh");
+    }
+    inp.focus();
+    pendingText = v=>finish(v);
+  });
+}
 let pendingText=null, activeChips=null;
 
 /* ---------------- red-flag engine ---------------- */
@@ -707,7 +759,10 @@ async function flow(input){
       S.step="severity";
       if(!S.sev){
         await addBot(t("q_severity"),450);
-        const sv=await askText(t("sev_hint")); S.sev=Math.max(1,Math.min(10,parseInt(sv)||5));
+        const sv=await askText(t("sev_hint"),[
+          {label:t("sev_mild"),value:"3"},{label:t("sev_moderate"),value:"5"},
+          {label:t("sev_bad"),value:"8"},{label:t("sev_worst"),value:"10"}]);
+        S.sev=Math.max(1,Math.min(10,parseInt(sv)||5));
       }
       if(S.sev>=9){ await addBot(t("q_severe_kind"),450);
         const conf=await chips([t("sev_sudden"),t("sev_gradual")]);
@@ -716,7 +771,7 @@ async function flow(input){
       if(!S.temp && !S.feverKind){
         await addBot(t("q_fever"),450);
         const f=await chips([t("fever_no"),t("fever_warm"),t("fever_meas")]);
-        if(f.idx===2){ const tv=await askText(t("temp_ph")); S.temp=parseFloat(tv)||null; S.feverKind="meas"; }
+        if(f.idx===2){ const tv=await askText(t("temp_ph"),[{label:t("temp_unknown"),value:""}]); S.temp=parseFloat(tv)||null; S.feverKind=S.temp?"meas":"warm"; }
         else if(f.idx===1){ S.feverKind="warm"; }
       }
       if(S.temp && S.temp>=105){ await emergencyStop("breathing"); return; }
@@ -724,7 +779,7 @@ async function flow(input){
       const P=[["none",t("pain_none")],["head",t("pain_head")],["eyes",t("pain_eye")],["ear",t("pain_ear")],["throat",t("pain_throat")],["chest",t("pain_chest")],["upabd",t("pain_upabd")],["lowabd",t("pain_lowabd")],["back",t("pain_back")],["joints",t("pain_joint")],["muscles",t("pain_muscle")],["skin",t("pain_skin")],["urinary",t("pain_urine")],["teeth",t("pain_teeth")]];
       if(!S.pains.length){
         await addBot(t("q_pain"),450);
-        const pr=await chips(P.map(x=>x[1]),{multi:true,doneLabel:t("continueBtn")});
+        const pr=await chips(P.map(x=>x[1]),{multi:true,doneLabel:t("continueBtn"),noneIdx:0});
         S.pains=pr.idxs.map(i=>P[i][0]).filter(x=>x!=="none");
       }
       if(S.pains.includes("chest")){
@@ -741,15 +796,15 @@ async function flow(input){
       } }
       S.step="allergy"; await addBot(t("q_allergy"),450);
       const A=[["none",t("allergy_none")],["pen",t("allergy_pen")],["sulfa",t("allergy_sulfa")],["nsaid",t("allergy_nsaid")],["other",t("allergy_other")]];
-      const ar=await chips(A.map(x=>x[1]),{multi:true,doneLabel:t("continueBtn")});
+      const ar=await chips(A.map(x=>x[1]),{multi:true,doneLabel:t("continueBtn"),noneIdx:0});
       S.allergies=ar.idxs.map(i=>A[i][0]).filter(x=>x!=="none");
-      if(S.allergies.includes("other")){ const o=await askText("…"); S.allergyOther=o; }
+      if(S.allergies.includes("other")){ const o=await askText(t("allergy_ph")); S.allergyOther=o; }
       S.step="conds"; await addBot(t("q_conds"),450);
       const C=[["none",t("cond_none")],["dm",t("cond_dm")],["bp",t("cond_bp")],["asthma",t("cond_asthma")],["thy",t("cond_thy")],["kid",t("cond_kid")],["ulcer",t("cond_ulcer")]];
-      const cr=await chips(C.map(x=>x[1]),{multi:true,doneLabel:t("continueBtn")});
+      const cr=await chips(C.map(x=>x[1]),{multi:true,doneLabel:t("continueBtn"),noneIdx:0});
       S.conds=cr.idxs.map(i=>C[i][0]).filter(x=>x!=="none");
       S.step="meds"; await addBot(t("q_meds"),450);
-      const m=await askText("…"); S.meds=m;
+      const m=await askText(t("meds_ph"),[{label:t("noneTap"),value:""}]); S.meds=m;
       await assess();
       break; }
     case "post": {
