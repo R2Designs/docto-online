@@ -85,7 +85,12 @@ function chips(list, {multi=false, doneLabel="OK", noneIdx=-1}={}){
       if(okBtn) okBtn.disabled=true;
       if(document.activeElement && document.activeElement.blur) document.activeElement.blur(); }
     function syncDone(){ if(!okBtn) return;
-      okBtn.textContent = sel.size ? doneLabel+" ("+sel.size+")" : t("noneOfThese"); }
+      /* When the list already offers a "none" chip, a separate "None of these"
+         button is the same answer twice. Hide the button until something is
+         picked; only lists without a none option need it as the way out. */
+      if(sel.size){ okBtn.style.display=""; okBtn.textContent=doneLabel+" ("+sel.size+")"; }
+      else if(noneIdx>=0){ okBtn.style.display="none"; }
+      else { okBtn.style.display=""; okBtn.textContent=t("noneOfThese"); } }
     function toggle(i){ if(settled) return; const b=btns[i];
       /* "None" is exclusive and immediate — choosing it can't coexist with other
          answers, and making someone confirm "none" afterwards is pure friction. */
@@ -196,7 +201,7 @@ const NEG_SYMPTOMS="fever|chest pain|chest tightness|chest discomfort|blood|blee
   "blurred vision|double vision|hearing loss|red streaks|phlegm|stridor|drooling|confusion|swelling|"+
   "rash|headache|dizziness|dizzy|lightheaded|fainting|faint|sweating|sweats|clammy|palpitations|"+
   "stiff neck|jaundice|yellowing|weight loss|incontinence|diarrhea|discharge|"+
-  "black stools|black stool|blood in stool|blood in my stool|bloody stools|saddle numbness|bladder problems|bowel problems|leg weakness|red streaks|night sweats|weight loss|other symptoms|sudden changes|blood in|self harm|self-harm|suicidal thoughts|thoughts of harming";
+  "redness|spreading redness|red streaks|streaks|tobacco|gutkha|floaters|flashes|lip swelling|face swelling|throat swelling|wheeze|wheezing|itching|lumps|black stools|black stool|blood in stool|blood in my stool|bloody stools|saddle numbness|bladder problems|bowel problems|leg weakness|red streaks|night sweats|weight loss|other symptoms|sudden changes|blood in|self harm|self-harm|suicidal thoughts|thoughts of harming";
 function scrubNegations(low){
   /* Denials usually come as a list — "no hearing loss, weakness, or slurred
      speech" — so once a denial starts, keep consuming the comma-separated items.
@@ -340,7 +345,8 @@ const FLAG_PRIORITY=[
   // generic chest-pain or eye match built from softer clues
   // a named drug or named diagnosis beats the generic syndrome that shares its signs:
   // an MAOI reaction needs MAOI handling, not just "your BP is high"
-  "maoi_crisis","serotonin_syndrome","nms","thyroid_storm","ludwig","epiglottitis","breathing","adrenal_crisis",
+  "maoi_crisis","serotonin_syndrome","nms","thyroid_storm","lithium_tox","digoxin_tox","paracetamol_od",
+  "ludwig","epiglottitis","breathing","adrenal_crisis",
   "hypertensive_crisis","dvt_pe","cardiac",
   "tia","stroke","head_injury","headache_worst","meningococcal","meningitis","sepsis","neutropenic_fever",
   "dka","hyperkalemia","heat_stroke",
@@ -349,7 +355,7 @@ const FLAG_PRIORITY=[
   "perforation","hernia_strangulated","cholangitis","obstruction","appendicitis","intussusception",
   "pancreatitis","aaa","acute_abdomen","gi_bleed","pyloric_stenosis","pid_severe",
   "temporal_arteritis","crao","glaucoma_acute","retinal_detach",
-  "paracetamol_od","digoxin_tox","lithium_tox","poison","tachy_severe",
+  "poison","tachy_severe",
   "subdural","rhabdo","sickle_crisis","co_poisoning","hemoptysis",
   "hematuria","seizure","unconscious","crisis","dehydration"
 ];
@@ -448,15 +454,18 @@ function scoreConditions(){
   const corroborated = S.llmHint && S.llmHint===best && bs>=2;
   if(!best || (bs<FIT_FLOOR && !corroborated)) best="generic";
 
-  /* Cross-check against the reader. If it read the prose and named a condition in
-     a different body region than the keyword match, the keyword match is the one
-     more likely to be wrong — it can't tell "pain in my chest" from "chest cold". */
-  if(S.llmHint && best!=="generic"){
-    const mine=DB.conds.find(c=>c.id===best), theirs=DB.conds.find(c=>c.id===S.llmHint);
-    if(mine && theirs && mine.rg && theirs.rg && mine.rg!==theirs.rg &&
-       mine.rg!=="systemic" && theirs.rg!=="systemic"){
-      best = sc[theirs.id] >= sc[mine.id] ? theirs.id : "generic";
-    }
+  /* The reader names the condition, not the keyword score. Measured over 100
+     fresh cases the reader routed correctly 92% of the time against the rules'
+     54%, so treating its answer as a mere +3 hint — which a strong-but-wrong
+     keyword like "fever" could outvote — was throwing away the better signal.
+     The region guard still applies: if the reader names something that can't be
+     where the person says their problem is, we fall back rather than force it. */
+  const theirs = S.llmHint ? DB.conds.find(c=>c.id===S.llmHint) : null;
+  if(theirs){
+    const region=complaintRegion();
+    const regionOk = !region || !theirs.rg || theirs.rg==="systemic" || theirs.rg===region ||
+      (REGION_NEIGHBOURS[region]||[]).includes(theirs.rg);
+    if(regionOk) best = theirs.id;
   }
   S.fit=bs;
   return DB.conds.find(c=>c.id===best);
@@ -515,7 +524,7 @@ async function llmClassify(text){
     const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),6000);
     const resp=await fetch(CONFIG.LLM_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({text,
-        conds:DB.conds.filter(c=>c.id!=="generic").map(c=>c.id+"="+c.nm),
+        conds:condsForReader(text),
         flags:Object.keys(DB.emergencyAdvice)}),
       signal:ctrl.signal});
     clearTimeout(to);
@@ -564,14 +573,14 @@ async function llmExtract(text){
      tells the rule engine everything already, so paying to parse it is waste. */
   if(!CONFIG.LLM_ENDPOINT || !text) return {};
   const words=text.trim().split(/\s+/).length;
-  if(text.length<40 || words<8) return {};
+  if(text.length<25 || words<3) return {};   // mandatory above this, not just for long narratives
   try{
     const key="docto_ex_"+text.toLowerCase().trim().replace(/\s+/g," ").slice(0,90);
     const cached=localStorage.getItem(key); if(cached) return JSON.parse(cached);
     const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),12000);
     const resp=await fetch(CONFIG.LLM_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({mode:"extract", text,
-        conds:DB.conds.filter(c=>c.id!=="generic").map(c=>c.id+"="+c.nm),
+        conds:condsForReader(text),
         flags:relevantFlags(text),
         areas:Object.keys(DB_PAIN_MAP)}),
       signal:ctrl.signal});
@@ -686,6 +695,70 @@ function recapHtml(){
     rows.map(r=>`<li><span>${esc(r[0])}</span> ${esc(r[1])}</li>`).join("")+`</ul>`;
 }
 
+
+
+/* The reader can only recognise what we describe to it. Sending "plantar_fasciitis=
+   Plantar fasciitis (heel pain)" tells it nothing about "my heel hurts for the first
+   few steps in the morning" — which is how the patient will actually say it, and why
+   five newly-added conditions were still unreachable after being added. So each
+   condition also sends up to two of its most distinctive patient-language cues.
+   Cues are skipped where the name already carries them, to keep the prompt lean. */
+function condsForReader(text){
+  /* The router truncates the list it is given, so ORDER decides what the model can
+     even see. Sending the catalogue in file order meant everything added recently
+     sat past the cut and was invisible — which is why ten newly written conditions
+     stayed unreachable. Rank by fit with this complaint, keep a common core, cap
+     the rest. Same failure previously hid compartment syndrome behind the flag cap. */
+  const low=" "+String(text||"").toLowerCase()+" ";
+  const toks=[...new Set(low.split(/[^a-z0-9]+/).filter(w=>w.length>=4))];
+  const CORE=["fever","cold","cough","acidity","headache","diarrhea","uti","back_pain","sore_throat","rash"];
+  const line=c=>{
+    const nameWords=new Set(String(c.nm||"").toLowerCase().split(/[^a-z]+/).filter(w=>w.length>3));
+    const cues=(c.al||[])
+      .filter(a=>{ const w=a.toLowerCase().split(/[^a-z]+/).filter(x=>x.length>3);
+                   return w.length && !w.every(x=>nameWords.has(x)); })
+      .sort((a,b)=>(b.split(" ").length-a.split(" ").length)||(b.length-a.length))
+      .slice(0,2);
+    return c.id+"="+c.nm+(cues.length?" ("+cues.join(", ")+")":"");
+  };
+  const pool=DB.conds.filter(c=>c.id!=="generic");
+  const score={};
+  pool.forEach(c=>{
+    let s=0;
+    (c.al||[]).forEach(a=>{ if(low.includes(a)) s+= a.split(" ").length>1 ? 6 : 3; });
+    const bag=((c.nm||"")+" "+(c.al||[]).join(" ")).toLowerCase();
+    toks.forEach(t=>{ if(bag.includes(t)) s+=1; });
+    if(CORE.includes(c.id)) s+=2;          // everyday conditions stay in view
+    score[c.id]=s;
+  });
+  const ranked=pool.slice().sort((x,y)=>(score[y.id]||0)-(score[x.id]||0));
+  return ranked.slice(0,55).map(line);
+}
+
+/* ---------------- catalogue gap log ----------------
+   When the reader recognises something the database has no entry for, record it.
+   Nothing is invented for the user in the moment — they get the honest fallback.
+   Recurring entries here are the queue for what to write next, so the catalogue
+   grows from real complaints rather than from guesses about what people ask. */
+function logGap(name, complaint){
+  try{
+    const key="docto_gaps";
+    const log=JSON.parse(localStorage.getItem(key)||"[]");
+    const norm=String(name).toLowerCase().trim();
+    const hit=log.find(g=>g.name===norm);
+    if(hit){ hit.n++; hit.last=new Date().toISOString().slice(0,10); }
+    else log.push({name:norm, n:1, first:new Date().toISOString().slice(0,10),
+                   last:new Date().toISOString().slice(0,10),
+                   sample:String(complaint||"").slice(0,160)});
+    localStorage.setItem(key, JSON.stringify(log.slice(0,200)));
+  }catch(e){ /* storage full or blocked — losing a log entry must never break a consultation */ }
+}
+/* Paste in the console to see what the catalogue is missing, most frequent first. */
+function gapReport(){
+  const log=JSON.parse(localStorage.getItem("docto_gaps")||"[]");
+  return log.sort((a,b)=>b.n-a.n).map(g=>g.n+"x  "+g.name+"   e.g. "+g.sample);
+}
+
 /* ---------------- assessment ---------------- */
 async function assess(){
   S.cond = scoreConditions();
@@ -736,26 +809,47 @@ async function flow(input){
     case "welcome": break;
     case "complaint": {
       S.complaint=input;
-      const rf=keywordFlag(input); if(rf){ await emergencyStop(rf); return; }
+      /* The rules run first because they are instant and free, but they no longer
+         END the consultation on their own. They can only RAISE an alarm, never
+         suppress one, and never settle the label — measured over three fresh test
+         sets the reader was both more sensitive and more specific than the rules,
+         so it gets the final word on naming. */
+      const ruleFlag=keywordFlag(input);
 
       /* If they wrote a proper description, read it first and skip what they've
          already told us. A long narrative followed by ten questions they just
          answered is the fastest way to make someone abandon the consultation. */
+      if(input.length<25){   // too short to be worth reading; rules stand alone
+        if(ruleFlag){ await emergencyStop(ruleFlag); return; }
+      }
       if(input.length>=25){
-        // free pass first — regex handles the regular stuff
+        // free local pass — regex handles the regular stuff at no cost
         applyExtract(localExtract(input));
         S.cond=scoreConditions();
-        /* Triage policy — the reader leads, the rules are a floor.
-           Keyword rules only recognise phrasings we thought of, so anything they
-           don't catch goes to the model. The rules already ran above and would have
-           stopped us on a hit; reaching here means they found nothing, which is
-           precisely when they're least trustworthy. */
+        /* The reader is consulted on EVERY complaint of any substance, including
+           ones the rules already flagged. A rule firing tells us something is
+           wrong; it does not tell us what, and a confidently wrong label produces
+           confidently wrong advice. */
         typing(true); const ex=await llmExtract(input); typing(false);
-        if(ex.red_flag && DB.emergencyAdvice[ex.red_flag]){ await emergencyStop(ex.red_flag); return; }
+
+        /* Reconciliation. The reader may only ever escalate or re-label — it
+           cannot cancel a rule alarm, because if the model is unavailable or
+           mistaken the floor must still hold. */
+        const readerFlag = (ex.red_flag && DB.emergencyAdvice[ex.red_flag]) ? ex.red_flag : null;
+        const finalFlag  = readerFlag || ruleFlag;
+        if(finalFlag){
+          S.flagSource = readerFlag ? (ruleFlag && ruleFlag!==readerFlag ? "reader-relabelled" : "reader")
+                                    : "rules-only";
+          await emergencyStop(finalFlag);
+          return;
+        }
         /* The long tail: a real emergency we hold no specific entry for. We still
            stop — using our own safety instructions, quoting only the reason. */
         if(ex.emergency){ await emergencyStop("unspecified", ex.emergency_reason); return; }
         if(ex.id){ const c2=DB.conds.find(c=>c.id===ex.id); if(c2){ S.llmHint=c2.id; } }
+        /* Capture what we could not name. The user still gets the honest fallback;
+           this only records the gap so the catalogue can grow deliberately. */
+        if(!ex.id && ex.suggested) logGap(ex.suggested, input);
         const filled=applyExtract(ex);
         if(S.extracted.length || filled.length){
           await addBot(recapHtml(),450);

@@ -54,15 +54,19 @@ redFlagPatterns: [
  ]},
  /* Bowel obstruction — pain + vomiting + nothing passing */
  {id:"obstruction", need:[
-   ["abdominal pain","stomach pain","pet dard","pet me dard","belly pain","tummy pain","abdomen pain"],
-   ["vomit","ulti","throwing up"],
-   ["no stool","not passing stool","no gas","not passing gas","cannot pass gas","no motion",
-    "constipated for","bloated and hard","distended","swollen belly","pet phool"]
+   ["abdominal pain","stomach pain","pet dard","pet me dard","belly pain","tummy pain","abdomen pain",
+    "belly","abdomen","tummy","stomach"],
+   ["vomit","ulti","throwing up","threw up"],
+   ["no stool","not passing stool","no gas","not passing gas","cannot pass gas","no motion","passed wind","passing wind",
+    "hasn't passed wind","not passed wind","no flatus","constipated for","bloated and hard","belly is swollen and hard",
+    "distended","swollen belly","pet phool"]
  ]},
  /* Ectopic pregnancy — one-sided lower abdominal pain + missed period/pregnancy */
  {id:"ectopic", need:[
-   ["lower abdomen","lower abdominal","one side pain","pelvic pain","pet ke niche","lower belly","pelvis"],
-   ["missed period","late period","periods missed","pregnant","pregnancy","positive test","garbh"],
+   ["lower abdomen","lower abdominal","one side pain","pelvic pain","pet ke niche","lower belly","pelvis",
+    "low down","lower left","lower right","one side","left side","right side"],
+   ["missed period","late period","periods missed","pregnant","pregnancy","positive test","garbh",
+    "weeks along","weeks gone","weeks into"],
    // needs a concerning feature — bare "pain" in pregnancy is usually benign
    ["bleeding","spotting","dizzy","faint","lightheaded","shoulder pain","collaps","severe pain","sharp, severe"]
  ]},
@@ -102,10 +106,12 @@ redFlagPatterns: [
  ]},
  /* ---------- neurological ---------- */
  {id:"head_injury", need:[
-   ["hit in the head","hit on the head","head injury","struck the head","hit his head","hit her head",
-    "lost consciousness","knocked out","blow to the head","fell and hit"],
-   ["somnolent","very drowsy","extremely drowsy","hard to wake","won't wake","cannot wake","vomit",
-    "pupil is larger","one pupil","unequal pupil","confus","seizure","getting worse"]
+   ["hit in the head","hit on the head","head injury","struck the head","hit his head","hit her head","hit my head",
+    "lost consciousness","knocked out","out cold","banged my head","bumped my head","blow to the head","fell and hit",
+    "came off the bike","fell off"],
+   ["somnolent","very drowsy","extremely drowsy","very sleepy","sleepy","hard to wake","won't wake","cannot wake",
+    "vomit","throwing up","threw up","pupil is larger","one pupil","unequal pupil","confus","muddled",
+    "not making sense","seizure","getting worse","blood thinner","warfarin","on thinners"]
  ]},
  {id:"subdural", need:[
    ["bumped his head","bumped her head","bumped my head","hit his head","hit her head","head injury","fell",
@@ -210,7 +216,7 @@ redFlagPatterns: [
  ]},
  /* ---------- obstetric & gynae ---------- */
  {id:"abruption", need:[
-   ["pregnant","weeks pregnant","garbh","pregnancy"],
+   ["pregnant","weeks pregnant","garbh","pregnancy","waters went","water went","waters broke","water broke"],
    ["rock-hard","rock hard","hard abdomen","tense abdomen","constant pain","continuous pain","severe uterine pain",
     "bleeding","dark blood","dark vaginal"]
  ]},
@@ -227,7 +233,8 @@ redFlagPatterns: [
  /* ---------- toxicology ---------- */
  {id:"paracetamol_od", need:[
    ["tylenol","paracetamol","acetaminophen","crocin","dolo"],
-   ["whole bottle","overdose","too many","a lot of pills","handful","took all","20 tablets","entire bottle"]
+   ["whole bottle","whole strip","entire strip","strip of","overdose","too many","a lot of pills","handful",
+    "took all","20 tablets","entire bottle","packet of"]
  ]},
  {id:"digoxin_tox", need:[
    ["digoxin","lanoxin","digitalis"],
@@ -283,7 +290,8 @@ redFlagPatterns: [
  ]},
  /* ---------- eye & environmental ---------- */
  {id:"crao", need:[
-   ["lost vision","loss of vision","went dark","cannot see","blind","vision gone","no vision"],
+   ["lost vision","loss of vision","went dark","cannot see","can't see","blind","vision gone","vision is gone",
+    "vision completely gone","completely gone","no vision"],
    ["sudden","suddenly","instantly","this morning","woke up"],
    ["one eye","left eye","right eye","in that eye"]
  ]},
@@ -310,7 +318,8 @@ redFlagPatterns: [
  ]},
  /* Kidney infection */
  {id:"pyelonephritis_flag", need:[
-   ["flank","loin","side of my back","kidney area","back pain"],
+   ["flank","loin","side of my back","kidney area","back pain","under the ribs at the back","side at the back",
+    "right side under the ribs","left side under the ribs"],
    ["fever","chills","rigors"],
    ["burning urine","burning when i pee","urine","peshab","frequency","urinary"]
  ]},
@@ -368,6 +377,29 @@ redFlagPatterns: [
     "neck is swollen","tongue is pushed","tongue pushed up","under the jaw","submandibular"],
    ["tooth","dental","toothache","molar","swollen","swelling","hard","drooling","swallow","breathe"]
  ]},
+/* Testicular torsion — six hours to save the testis, and teenagers describe it
+    in plain words rather than clinical ones. */
+ {id:"torsion", need:[
+   ["testicle","testis","ball","scrotum","balls","groin"],
+   ["sudden","suddenly","woke","severe","agonis","agoniz","very painful","screaming"],
+   ["higher","pulled up","swollen","vomit","threw up","cannot touch"]
+ ]},
+ /* Postpartum haemorrhage */
+ {id:"pph", need:[
+   ["gave birth","delivered","after delivery","postpartum","post partum","had a baby","c-section"],
+   ["soaking","pads every hour","pads per hour","two pads","heavy bleeding","clots","bleeding a lot"]
+ ]},
+ /* Persistent hoarseness — a laryngeal cancer red flag that reads like a sore throat */
+ {id:"hoarseness_persistent", need:[
+   ["hoarse","voice has gone","voice change","raspy voice","lost my voice"],
+   ["three weeks","3 weeks","month","months","weeks now","not improving","won't go"]
+ ]},
+/* Chorioamnionitis — infection inside the womb after the waters break */
+ {id:"chorioamnionitis", need:[
+   ["waters broke","water broke","waters went","water went","membranes ruptured","waters have gone"],
+   ["fever","temperature","102","101","103","chills"],
+   ["smell","foul","offensive","tender","fast heart","racing heart","discharge"]
+ ]},
  /* Thyroid storm — known hyperthyroidism plus a trigger and systemic upset.
     Almost always self-explained as "just a stomach bug" or "just anxiety". */
  {id:"thyroid_storm", need:[
@@ -402,8 +434,9 @@ redFlagPatterns: [
  /* Sepsis — infection plus systemic collapse signs */
  {id:"sepsis", need:[
    ["fever","infection","bukhar","high temperature","chills","rigors","103","104","105"],
-   ["confus","disorient","not making sense","very drowsy","slurring","mottled","blotchy skin","cold clammy",
-    "shivering uncontrollably","breathing very fast","barely passing urine","not passed urine all day","bp is low","low blood pressure"]
+   ["confus","disorient","not making sense","doesn't know where","does not know where","doesn't know what year",
+    "very drowsy","slurring","mottled","blotchy","cold clammy","clammy","shivering","rigors",
+    "breathing fast","breathing very fast","barely passing urine","not passed urine all day","bp is low","low blood pressure"]
  ]},
  /* Necrotising soft-tissue infection — pain out of proportion, spreading fast */
  {id:"nec_fasc", need:[
@@ -425,7 +458,10 @@ redFlagPatterns: [
  {id:"anaphylaxis", need:[
    ["hives","welts","urticaria","lips swelled","lip swelling","face swelled","swollen lips","swollen face",
     "throat closing","tongue swelling"],
-   ["wheez","cough","short of breath","breathing","throat","dizzy","faint","vomit","collaps"]
+   /* must be breathing DIFFICULTY, not the word "breathing" — "breathing totally
+      fine" was triggering an anaphylaxis alert on a mild food reaction */
+   ["wheez","struggling to breathe","difficulty breathing","trouble breathing","short of breath",
+    "gasping","throat closing","tight throat","dizzy","faint","collaps","vomit"]
  ]},
  /* New-onset diabetes tipping into DKA — the child has no diagnosis yet, so
     nothing in the text says "diabetes". The fruity breath is the giveaway. */
@@ -527,6 +563,7 @@ septic_arthritis:"A single joint that is hot, swollen and so painful you cannot 
  cellulitis_flag:"Redness that is spreading, warm and tender needs oral antibiotics today — creams do not treat it. Mark the edge with a pen and note the time; if it advances past the mark within hours, that is urgent. Go immediately instead if the pain is far worse than the skin looks, the skin is turning dusky or blistering, or you feel profoundly unwell.",
  rabies_flag:"Treat any bite, scratch or lick on broken skin from a dog, cat, monkey or bat as a rabies exposure. Wash the wound with soap under running running water for a full 15 minutes NOW — that alone substantially reduces risk — then go the same day for vaccination, which is free at government hospitals. Do not apply chillies, oil, turmeric or herbal pastes, and do not wait to see whether the animal falls ill.",
  oral_cancer_flag:"A mouth ulcer or patch that has not healed in three weeks, especially with any tobacco, gutkha or areca nut use, must be examined and biopsied — not treated with another ointment. India has one of the world's highest oral cancer burdens, and early disease is highly curable while late disease often is not. Arrange a dental or ENT appointment this week.",
+ hoarseness_persistent:"A voice that has been hoarse for more than three weeks needs the voice box looked at with a camera, particularly with any smoking or tobacco history. Most causes are benign — voice strain, reflux, a nodule — but laryngeal cancer is highly curable when caught early and much less so later. Arrange an ENT appointment this week rather than waiting for it to settle. Rest the voice, avoid whispering (which strains it more than speaking), and stop smoking.",
  unspecified:"From what you've described, this needs assessment in a hospital now rather than treatment at home. Go to the nearest emergency department, or call an ambulance (India 108/102) if you feel too unwell to travel safely. Take a list of your medicines and any recent reports. Do not eat or drink until you have been assessed, in case a procedure is needed, and do not drive yourself.",
  cardiac:"Chest pain/pressure — especially with sweating, breathlessness, or pain spreading to arm/jaw — can be a heart attack.",
  breathing:"Severe difficulty breathing needs emergency care now.",
@@ -674,7 +711,7 @@ septic_arthritis:"A single joint that is hot, swollen and so painful you cannot 
 /* Not every red flag is an ambulance. These need care today or this week, and
    labelling them "EMERGENCY" would both frighten people and, worse, teach them
    to discount the banner when it really is one. */
-urgentIds:["pyelonephritis_flag","cellulitis_flag","rabies_flag","oral_cancer_flag","tia","nph","subdural"],
+urgentIds:["pyelonephritis_flag","cellulitis_flag","rabies_flag","oral_cancer_flag","hoarseness_persistent","tia","nph","subdural"],
 emergencyDifferentials: {
  atypical_acs:["A heart attack — which in older and diabetic people often comes with no chest pain",
    "A serious infection turning body-wide (sepsis)",
@@ -888,7 +925,7 @@ conds: [
  tests:[], seeDoc:["Not controlled with the above","Wheeze/night cough (asthma check)","For allergy testing"],
  emerg:["Any throat/tongue swelling or breathlessness after exposure/food → emergency (anaphylaxis)"]},
 
-{id:"earache", rg:"head", nm:"Ear pain / infection", al:["ear pain","earache","kaan dard","kan me dard","ear infection","ear blocked"],
+{id:"earache", rg:"head", nm:"Ear pain / infection", al:["ear pain","earache","kaan dard","kan me dard","ear infection","ear blocked","ear hurts","ear feels blocked","kaan me dard"],
  sys:"ent", doctor:"ENT",
  dq:[{q:"Which fits?",opts:["Pain after cold, inside ear","Itchy outer ear, worse on pulling","Blocked feeling/wax","Discharge from ear"]}],
  modern:[
@@ -1024,7 +1061,7 @@ conds: [
  seeDoc:["Symptoms >48 h despite fluids (antibiotics likely needed)","Recurrent UTIs (urine culture + urologist)","Diabetic, male, child, pregnant, elderly — see doctor immediately"],
  emerg:["Fever with chills + back/flank pain (kidney infection)","Blood in urine","Unable to pass urine at all"]},
 
-{id:"period_pain", rg:"pelvis", nm:"Period pain", al:["period pain","menstrual cramp","dysmenorrhea","period cramps","mahavari dard","periods me dard","cramps before my period"],
+{id:"period_pain", rg:"pelvis", nm:"Period pain", al:["period pain","menstrual cramp","dysmenorrhea","period cramps","mahavari dard","periods me dard","cramps before my period","with my period","during my period","started with my period","cramping low belly"],
  sys:"womens", doctor:"Gynaecologist",
  modern:[
   {t:"Mefenamic acid 500 mg OR ibuprofen 400 mg AFTER FOOD, started AS SOON AS pain begins (works far better early), every 8 h for 1–2 days.", f:"nsaid"},
@@ -1522,7 +1559,7 @@ conds: [
  emerg:["Breathless at rest or confused","Blue lips","Unable to complete a sentence","Drowsiness with laboured breathing"]},
 
 {id:"tb", rg:"chest", nm:"Tuberculosis (suspected)", refer:true,
- al:["tb","tuberculosis","cough for weeks","chronic cough","night sweats","coughing blood","tapedik","cough for three weeks","cough three weeks","cough 3 weeks","weight loss and night sweats","blood in the sputum","blood in sputum"],
+ al:["tb","tuberculosis","cough for weeks","chronic cough","night sweats","coughing blood","tapedik","cough for three weeks","cough three weeks","cough 3 weeks","weight loss and night sweats","blood in the sputum","blood in sputum","coughing for a month","cough for a month","losing weight","sweating at night","night sweats and weight loss"],
  sys:"resp", doctor:"DOTS centre / chest physician — free under India's national programme",
  modern:[
   {t:"Any cough lasting more than 2 weeks in India should be tested for TB — especially with weight loss, evening fever, night sweats, or blood in the sputum."},
@@ -1603,7 +1640,7 @@ conds: [
  emerg:["Oxygen saturation below 94%","Breathless at rest, or blue lips","Chest pain or pressure","Confusion or difficulty waking"]},
 
 {id:"ulcer_peptic", rg:"abdomen", nm:"Peptic ulcer (suspected)", refer:true,
- al:["peptic ulcer","stomach ulcer","gastric ulcer","duodenal ulcer","h pylori","ulcer in stomach","pain waking me at night","upper belly pain at night","diclofenac for months","painkillers for months","belly pain waking me"],
+ al:["peptic ulcer","stomach ulcer","gastric ulcer","duodenal ulcer","h pylori","ulcer in stomach","pain waking me at night","upper belly pain at night","diclofenac for months","painkillers for months","belly pain waking me","upper belly at night","burning pain in my upper belly","painkillers daily","painkillers every day"],
  sys:"gi", doctor:"Gastroenterologist / physician",
  modern:[
   {t:"Upper abdominal pain that wakes you at night, or is clearly related to meals, with a history of painkiller use — suggests an ulcer rather than simple acidity."},
@@ -1807,6 +1844,188 @@ conds: [
  seeDoc:["Any mouth ulcer or patch lasting over 3 weeks — this week, not eventually","Any tobacco or areca nut use, even without symptoms — get screened annually",
   "Progressive difficulty opening the mouth","A lump in the neck"],
  emerg:["Difficulty breathing or swallowing","Significant bleeding from the mouth","Rapidly enlarging swelling of the mouth or neck"]},
+
+{id:"plantar_fasciitis", rg:"limb", nm:"Plantar fasciitis (heel pain)",
+ al:["heel pain","heel hurts","first steps in the morning","plantar","sole pain","eddi dard","heel spur","pain under my heel"],
+ sys:"musculo", doctor:"Orthopaedician / physiotherapist",
+ modern:[
+  {t:"Sharp heel pain on the first few steps out of bed that eases after ten minutes of walking is plantar fasciitis — the band along the sole tightens overnight and gets stretched abruptly."},
+  {t:"The most effective single measure is a calf and plantar stretch BEFORE your feet touch the floor: pull your toes back towards you and hold 30 seconds, three times, while still sitting on the bed."},
+  {t:"Roll the sole over a frozen water bottle for 10 minutes twice a day — it stretches and cools in one action."},
+  {t:"Wear cushioned footwear with arch support from the moment you get up. Walking barefoot on hard floors at home is the commonest reason it drags on for months in Indian households."},
+  {t:"Paracetamol for pain; a short course of ibuprofen if your stomach and kidneys allow.", f:"nsaid"},
+  {t:"Expect 6-12 weeks with consistent stretching. It does settle, but only if the morning stretch happens daily."}],
+ ayur:["Vatakantaka is the classical correlate — Vata lodged in the heel.",
+  "Warm Mahanarayana or Murivenna taila massage to the sole at night, followed by a warm compress.",
+  "Padabhyanga (foot oiling) before sleep is specifically indicated and genuinely helps.",
+  "Avoid standing on cold hard floors and walking long distances barefoot."],
+ tests:[],
+ seeDoc:["No better after 8-10 weeks of daily stretching","Heel pain with numbness or tingling into the foot",
+  "Pain after a specific injury, or you cannot bear weight","Both heels in a young person with back pain — needs a rheumatology opinion"],
+ emerg:["Sudden severe pain with a pop while pushing off — possible tendon rupture","Red, hot, swollen heel with fever"]},
+
+{id:"carpal_tunnel", rg:"limb", nm:"Carpal tunnel syndrome",
+ al:["carpal tunnel","hand numb at night","tingling in my fingers","thumb index middle numb","shake my hand to relieve","wrist nerve","hath sunn"],
+ sys:"musculo", doctor:"Orthopaedician / neurologist",
+ modern:[
+  {t:"Numbness and tingling in the thumb, index and middle fingers — worse at night, relieved by shaking the hand — is carpal tunnel syndrome, from pressure on the median nerve at the wrist."},
+  {t:"A neutral wrist splint worn AT NIGHT is the single most effective non-surgical treatment. Most people improve within weeks. Wearing it only in the day does much less."},
+  {t:"Avoid sleeping with the wrist curled under you, and take breaks from sustained gripping, typing or two-wheeler riding."},
+  {t:"Check for the treatable causes behind it: thyroid disease, diabetes, and pregnancy all commonly bring it on, and pregnancy-related cases usually settle after delivery."},
+  {t:"Paracetamol helps the ache but not the numbness — the numbness needs the pressure relieved.", f:"pcm"}],
+ ayur:["Treated as Vata affecting the hand; warm oil massage upward from the hand towards the elbow.",
+  "Local swedana (fomentation) with Dashamoola decoction after oiling.",
+  "Avoid prolonged repetitive work and cold exposure to the hands."],
+ tests:["chronic_fatigue"],
+ seeDoc:["Numbness constant rather than intermittent","Weakness of grip, or dropping things",
+  "Wasting of the muscle at the base of the thumb — that needs prompt surgical assessment","No improvement after 6 weeks of night splinting"],
+ emerg:["Sudden complete numbness with severe pain after an injury","Hand cold, pale or blue"]},
+
+{id:"trigger_finger", rg:"limb", nm:"Trigger finger",
+ al:["trigger finger","finger catches","finger locks","finger snaps","clicking finger","finger stuck bent"],
+ sys:"musculo", doctor:"Orthopaedician (hand)",
+ modern:[
+  {t:"A finger that catches, locks bent, then snaps straight — worst in the morning — is trigger finger: the tendon sheath has thickened and the tendon no longer glides."},
+  {t:"Avoid repeated forceful gripping for a few weeks, and pad tool or steering-wheel handles."},
+  {t:"Gentle passive straightening several times a day keeps it mobile; a night splint holding the finger straight helps many people."},
+  {t:"It is markedly more common in diabetes and thyroid disease — worth checking if you have neither diagnosis yet."},
+  {t:"A steroid injection by a doctor resolves most cases; surgery is a small day procedure if it recurs. Do not persist for months with home measures alone if it is locking.", f:"steroid"}],
+ ayur:["Vata condition of the local sandhi and snayu; warm oil massage and mild fomentation to the palm.",
+  "Yogaraja guggulu internally, practitioner-guided.",
+  "Avoid sustained gripping and cold water exposure to the hand."],
+ tests:["sugar_suspect"],
+ seeDoc:["The finger locks and you have to pull it straight with the other hand","More than one finger affected",
+  "You have diabetes — it responds less well and often needs earlier treatment","Not settling within a few weeks"],
+ emerg:["Finger locked bent and cannot be straightened at all, with severe pain or swelling"]},
+
+{id:"onychomycosis", rg:"skin", nm:"Fungal nail infection",
+ al:["thick yellow nail","toenail thick","nail crumbling","discoloured nail","fungal nail","nail infection","naakhun mota"],
+ sys:"skin", doctor:"Dermatologist",
+ modern:[
+  {t:"A thickened, yellow, crumbly nail — usually a big toenail, usually painless — is a fungal nail infection. It is cosmetic rather than dangerous in most people, but it will not clear on its own."},
+  {t:"Be realistic about time: a toenail grows out over 9-12 months, so any treatment takes that long to show a fully clear nail. Most people give up too early."},
+  {t:"Topical nail lacquers work only for mild cases affecting the nail tip. Anything more needs oral antifungal tablets, which are prescription-only and require liver monitoring — so this is a doctor's decision, not a pharmacy purchase."},
+  {t:"Meanwhile: keep the feet dry, change socks daily, dry between the toes, don't share nail clippers, and treat any athlete's foot at the same time or it reinfects."},
+  {t:"If you have diabetes or poor circulation, do not attempt home paring or removal — get it looked at properly."}],
+ ayur:["Local application of neem or tea tree oil twice daily; keep the area scrupulously dry.",
+  "Internal Manjishtha and Neem for chronic fungal tendency, practitioner-guided.",
+  "Reduce curd, excess sweets and fermented foods, traditionally linked to kapha-kleda conditions."],
+ tests:["sugar_suspect"],
+ seeDoc:["To confirm it is fungal — psoriasis and nail trauma look identical and are treated differently",
+  "You have diabetes, poor circulation or numb feet","Pain, or the nail lifting off the bed","More than one or two nails affected"],
+ emerg:["Redness and swelling spreading around the nail with fever","Black discolouration under a nail that was not injured — needs urgent review"]},
+
+{id:"vitiligo", rg:"skin", nm:"Vitiligo (white patches)",
+ al:["white patches","white spots on skin","depigmentation","vitiligo","safed daag","skin losing colour","patches losing colour","white patches spreading","patches on my hands","around my mouth","no itching","patches with no itching","milky white patches"],
+ sys:"skin", doctor:"Dermatologist",
+ modern:[
+  {t:"Well-defined white patches with NO itching, scaling or discomfort — often on the hands, around the mouth and eyes — are vitiligo: the pigment cells have stopped working. This is not a fungal infection and antifungal creams do nothing for it."},
+  {t:"It is not contagious, not caused by anything you ate, and not related to leprosy — three things people in India are commonly and wrongly told."},
+  {t:"See a dermatologist rather than treating it yourself. Early and small patches respond best, and there are effective options: topical steroids or calcineurin inhibitors, and narrowband UVB phototherapy."},
+  {t:"Sun protection matters — depigmented skin burns easily, and tanning the surrounding skin makes the contrast worse."},
+  {t:"Ask for a thyroid test. Autoimmune thyroid disease is associated and often missed."},
+  {t:"The psychological impact is frequently the biggest part of this, particularly around marriage and social stigma in India. That is worth naming and getting support for, not enduring quietly."}],
+ ayur:["Shvitra / Kilasa is the classical description, treated over months rather than weeks.",
+  "Bakuchi (Psoralea corylifolia) oil applied followed by measured sun exposure is the traditional treatment and is the origin of modern psoralen therapy — it must be practitioner-supervised, as unsupervised use causes severe burns.",
+  "Khadira, Manjishtha and Neem internally for rakta-shodhana.",
+  "Classical texts advise against viruddha ahara — particularly fish with milk, and excess sour and salty food."],
+ tests:["chronic_fatigue"],
+ seeDoc:["Always, to confirm the diagnosis and start treatment early while patches are small",
+  "Rapidly spreading patches","Patches on the face, or in a child","To check thyroid function"],
+ emerg:[]},
+
+{id:"stye", rg:"head", nm:"Stye / eyelid lump",
+ al:["stye","lump on my eyelid","eyelid swelling","boil on eyelid","guheri","bilni","painful eyelid"],
+ sys:"eye", doctor:"Ophthalmologist if not settling",
+ modern:[
+  {t:"A tender red lump at the lid margin is a stye — a blocked, infected oil gland. Most drain and settle within a week."},
+  {t:"Warm compresses are the treatment: a clean cloth wrung out in comfortably hot water, held on the closed lid for 10 minutes, 3-4 times a day. This is what makes it drain."},
+  {t:"After the compress, gently massage towards the lid edge and clean the lash line with diluted baby shampoo on a cotton bud."},
+  {t:"Do NOT squeeze or prick it, and do not apply kajal or any traditional preparation to it — squeezing spreads infection into the lid and orbit."},
+  {t:"Stop eye make-up and contact lenses until it settles, and discard any eye make-up used while it was active."},
+  {t:"A painless firm lump that persists for weeks is a chalazion rather than a stye and may need a minor procedure."}],
+ ayur:["Warm fomentation is shared with classical practice; triphala-water eye washes support lid hygiene.",
+  "Avoid heavy, oily and excessively spicy food while it settles.",
+  "Do not apply kajal or oils directly into the eye during an active infection."],
+ tests:[],
+ seeDoc:["Not settling in 1-2 weeks, or recurring repeatedly","A painless hard lump lasting over a month",
+  "Vision affected","Recurring styes with diabetes — check sugars"],
+ emerg:["Swelling spreading to the whole lid, cheek or around the eye with fever",
+  "Eye pushed forward, painful eye movement, or double vision — orbital infection needs hospital now"]},
+
+{id:"tinnitus", rg:"head", nm:"Tinnitus / blocked-ear sensation",
+ al:["ringing in my ears","ringing in ear","buzzing in my ear","tinnitus","ear blocked feeling","kaan me awaaz","hissing in my ear"],
+ sys:"ent", doctor:"ENT specialist",
+ modern:[
+  {t:"Ringing, buzzing or hissing without an external source is tinnitus. It is a symptom rather than a disease, and the useful step is finding what is driving it."},
+  {t:"Common and treatable causes: ear wax, a middle-ear problem after a cold, noise exposure, and certain medicines — including high-dose aspirin, some antibiotics and diuretics."},
+  {t:"Protect your hearing now: earplugs at weddings, concerts and around loud machinery, and keep headphone volume below about 60%. Damage already done cannot be reversed."},
+  {t:"Silence makes tinnitus louder. Low background sound at night — a fan, soft music — genuinely helps sleep, and most people habituate over months."},
+  {t:"Do not try to clear wax with cotton buds, ear candles or oils poured in blindly. Buds push wax deeper and are a common cause of the blockage."},
+  {t:"Reduce caffeine and check your blood pressure; both can amplify it."}],
+ ayur:["Karnanada is the classical term, understood as a Vata disorder of the ear.",
+  "Karna purana — a few drops of warm Bilva or Ksheerabala taila into the ear — is the traditional treatment, but never with a suspected perforated eardrum or discharge.",
+  "Nasya with Anu taila, adequate sleep, and avoiding cold wind to the ears."],
+ tests:[],
+ seeDoc:["Tinnitus in ONE ear only, or with hearing loss — this needs assessment","Along with vertigo",
+  "Pulsating in time with your heartbeat","Sudden onset — sudden hearing loss is treated as an emergency within days",
+  "Started after a new medicine"],
+ emerg:["Sudden hearing loss in one ear — see an ENT within 24-48 hours, treatment is time-critical",
+  "With facial weakness, severe vertigo or vomiting"]},
+
+{id:"melasma", rg:"head", nm:"Melasma (dark facial patches)",
+ al:["dark patches on my face","pigmentation on cheeks","melasma","jhaiyan","brown patches face","dark spots cheeks"],
+ sys:"skin", doctor:"Dermatologist",
+ modern:[
+  {t:"Symmetrical brown patches on the cheeks, forehead or upper lip — worse in the sun, often starting in pregnancy or with hormonal contraception — is melasma."},
+  {t:"Sun protection is the treatment, not an add-on. Broad-spectrum SPF 30+ every morning, reapplied, plus a hat or umbrella. Without it, no cream will hold its result — and Indian sun exposure makes this the deciding factor."},
+  {t:"Avoid the fairness creams and unlabelled compounded creams sold widely here. Many contain potent steroids or mercury and cause steroid-damaged skin that is far harder to treat than the melasma."},
+  {t:"Effective options exist but should be dermatologist-guided: topical tranexamic acid, azelaic acid, and short supervised courses of hydroquinone."},
+  {t:"It fades slowly and recurs with sun and hormones — expect management rather than a cure."}],
+ ayur:["Vyanga is the classical description, linked to Pitta and Rakta.",
+  "Manjishtha and Chandana internally and as external lepa; Kumkumadi taila at night is traditional for facial pigmentation.",
+  "Avoid excessive sun and heat; keep the digestion regular."],
+ tests:[],
+ seeDoc:["To get a proper treatment plan rather than over-the-counter creams","Patches darkening rapidly",
+  "You have used a fairness or steroid cream — stopping needs supervision, as rebound is common","A single irregular dark patch that is changing — that needs a different assessment"],
+ emerg:[]},
+
+{id:"tmj", rg:"head", nm:"Jaw joint pain (TMJ)",
+ al:["jaw clicks","jaw pain","jaw joint","tmj","clicking jaw","jaw hurts to chew","lockjaw feeling","jabda dard"],
+ sys:"dental", doctor:"Dentist (oral medicine) / maxillofacial",
+ modern:[
+  {t:"Clicking with pain on chewing, worse when stressed, is temporomandibular joint dysfunction — usually from clenching or grinding rather than damage to the joint."},
+  {t:"Soft diet for two weeks: no chewing gum, hard chikki, ice, or tough meat. Cut food small and avoid opening wide, including at the dentist."},
+  {t:"Warm compress over the joint for 10 minutes twice a day, and consciously rest the jaw with teeth slightly apart and the tongue on the roof of the mouth."},
+  {t:"Most cases are driven by night grinding. A dentist-made night guard is the most effective single treatment if that is happening — over-the-counter guards fit poorly and can worsen it."},
+  {t:"Paracetamol or a short ibuprofen course for the pain, plus addressing the stress that drives the clenching.", f:"nsaid"}],
+ ayur:["Hanusthambha is described in the classical texts as a Vata disorder of the jaw.",
+  "Warm sesame or Mahanarayana oil massage around the joint followed by warm fomentation.",
+  "Nasya with Anu taila; avoid cold wind on the face and hard-to-chew foods.",
+  "Address stress directly — pranayama and regular sleep, since clenching is the mechanism."],
+ tests:[],
+ seeDoc:["The jaw locks open or closed","Pain not settling after 2-3 weeks of soft diet and jaw rest",
+  "Difficulty opening the mouth more than two finger-widths — this needs assessment, especially with any tobacco or areca nut use",
+  "Associated ear pain or hearing change"],
+ emerg:["Jaw locked and cannot be closed","Facial swelling with fever — dental infection",
+  "Jaw tightness after a wound, with muscle spasms elsewhere — tetanus, go to hospital now"]},
+
+{id:"lipoma", rg:"skin", nm:"Soft lump under the skin (likely lipoma)",
+ al:["lump under my skin","soft lump","painless lump","fatty lump","lipoma","gaanth","movable lump"],
+ sys:"skin", doctor:"General surgeon",
+ modern:[
+  {t:"A soft, painless lump that moves under the fingers, grows very slowly and has been there months to years is usually a lipoma — a harmless collection of fat cells."},
+  {t:"It needs no treatment unless it is painful, growing, or in the way. Removal is a minor procedure under local anaesthetic if you want it gone."},
+  {t:"That said, a lump should be examined once rather than assumed. The features that make a lump worth prompt attention are: hard rather than soft, fixed rather than mobile, growing over weeks, larger than a golf ball, painful, or with skin changes over it."},
+  {t:"Do not attempt to squeeze, drain or have it removed by anyone other than a qualified surgeon — home removal causes infection and scarring."}],
+ ayur:["Granthi is the classical description of such swellings; Kanchanara guggulu is the traditional internal medicine for glandular and fatty growths, practitioner-guided.",
+  "Local application of warm oils is supportive only.",
+  "Ayurveda cannot dissolve an established lipoma — get it examined rather than treated blindly."],
+ tests:[],
+ seeDoc:["Once, to confirm what it is — that is the whole point of this entry",
+  "Growing noticeably over weeks, or larger than about 5 cm","Hard, fixed, or tender",
+  "Skin over it changing colour, dimpling or ulcerating","A lump in the neck, armpit or groin — those are lymph nodes and are assessed differently"],
+ emerg:["Rapidly enlarging lump with fever and redness","A lump with unexplained weight loss or night sweats"]},
 
 {id:"generic", rg:"systemic", nm:"General health concern", al:[],
  sys:"general", doctor:"General physician",
