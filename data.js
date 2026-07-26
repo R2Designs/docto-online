@@ -291,6 +291,50 @@ redFlagPatterns: [
    ["stopped sweating","hot and dry","dry skin","not sweating"],
    ["confus","slurring","collapse","unconscious","drowsy","disorient"]
  ]},
+/* Hot swollen joint with fever — indistinguishable from gout without aspiration */
+ {id:"septic_arthritis", need:[
+   ["joint","knee","hip","shoulder","elbow","wrist","ankle","toe"],
+   ["hot","swollen","red","cannot move","can't move","unable to move"],
+   ["fever","chills","unwell","102","101","103"]
+ ]},
+ /* Palpitations with haemodynamic consequence */
+ {id:"arrhythmia", need:[
+   ["palpitation","heart racing","racing heart","heart pounding","skipping beats","fluttering","irregular heartbeat"],
+   ["faint","fainted","dizzy","lightheaded","chest pain","breathless","collaps","black out"]
+ ]},
+ /* Mastoiditis — the swelling is behind the ear, not in it */
+ {id:"mastoiditis", need:[
+   ["behind the ear","behind my ear","behind his ear","behind her ear","mastoid"],
+   ["swollen","swelling","tender","red","pushed forward","sticking out"]
+ ]},
+ /* Kidney infection */
+ {id:"pyelonephritis_flag", need:[
+   ["flank","loin","side of my back","kidney area","back pain"],
+   ["fever","chills","rigors"],
+   ["burning urine","burning when i pee","urine","peshab","frequency","urinary"]
+ ]},
+ /* Spreading skin infection. Warmth alone is not enough — a mosquito bite is
+    warm and red too. Require actual progression, or warmth plus feeling unwell. */
+ {id:"cellulitis_flag", need:[
+   ["redness","red area","red patch","skin is red","red and swollen"],
+   ["spreading","getting bigger","advancing","tracking up","red streaks","larger than yesterday",
+    "growing","crept up","moving up my"]
+ ]},
+ {id:"cellulitis_flag", need:[
+   ["redness","red area","red patch","skin is red","red and swollen"],
+   ["warm","hot to touch","swollen","tender"],
+   ["fever","chills","unwell","shivering","102","101","103"]
+ ]},
+ /* Rabies exposure — any mammal bite counts */
+ {id:"rabies_flag", need:[
+   ["dog","cat","monkey","bat","mongoose","stray","puppy","kitten"],
+   ["bit me","bite","bitten","scratch","scratched","licked"]
+ ]},
+ /* Non-healing oral lesion */
+ {id:"oral_cancer_flag", need:[
+   ["mouth ulcer","ulcer in my mouth","patch in my mouth","white patch","red patch","sore in my mouth","tongue ulcer"],
+   ["three weeks","3 weeks","month","months","not healing","won't heal","hasn't healed","never heals","tobacco","gutkha","gutka","khaini","paan","areca","supari"]
+ ]},
  /* Thyroid storm — known hyperthyroidism plus a trigger and systemic upset.
     Almost always self-explained as "just a stomach bug" or "just anxiety". */
  {id:"thyroid_storm", need:[
@@ -443,6 +487,13 @@ redFlagPatterns: [
 emergencyAdvice: {
  /* Used when the reader recognises a genuine emergency we have no specific entry
     for. The safety instructions are ours; only the reason is quoted from the reader. */
+septic_arthritis:"A single joint that is hot, swollen and so painful you cannot move it, with fever, is a septic joint until proven otherwise. Pus inside a joint destroys the cartilage within days and it is easily mistaken for gout. Go to an emergency department NOW and ask for the joint to be aspirated before any steroid is given.",
+ arrhythmia:"A heart that is racing, thumping or skipping in a way that makes you faint, breathless or gives you chest pain needs an ECG while it is happening. Go to an emergency department now rather than waiting for it to settle. If you feel faint, lie down and raise your legs. Avoid caffeine, alcohol and stimulants meanwhile, and bring a list of your medicines.",
+ mastoiditis:"Swelling and tenderness of the bone behind the ear, pushing the ear forward, with fever and ear pain, is mastoiditis — infection spreading into the skull bone. It needs intravenous antibiotics and sometimes surgery. Go to hospital now; ear drops will not reach it.",
+ pyelonephritis_flag:"Fever with chills and pain in the flank alongside urinary symptoms means the infection has reached the kidney. This needs a urine culture and a proper antibiotic course today — an over-the-counter course will under-treat it and risks permanent kidney scarring. Go the same day, and urgently if you are pregnant or diabetic.",
+ cellulitis_flag:"Redness that is spreading, warm and tender needs oral antibiotics today — creams do not treat it. Mark the edge with a pen and note the time; if it advances past the mark within hours, that is urgent. Go immediately instead if the pain is far worse than the skin looks, the skin is turning dusky or blistering, or you feel profoundly unwell.",
+ rabies_flag:"Treat any bite, scratch or lick on broken skin from a dog, cat, monkey or bat as a rabies exposure. Wash the wound with soap under running running water for a full 15 minutes NOW — that alone substantially reduces risk — then go the same day for vaccination, which is free at government hospitals. Do not apply chillies, oil, turmeric or herbal pastes, and do not wait to see whether the animal falls ill.",
+ oral_cancer_flag:"A mouth ulcer or patch that has not healed in three weeks, especially with any tobacco, gutkha or areca nut use, must be examined and biopsied — not treated with another ointment. India has one of the world's highest oral cancer burdens, and early disease is highly curable while late disease often is not. Arrange a dental or ENT appointment this week.",
  unspecified:"From what you've described, this needs assessment in a hospital now rather than treatment at home. Go to the nearest emergency department, or call an ambulance (India 108/102) if you feel too unwell to travel safely. Take a list of your medicines and any recent reports. Do not eat or drink until you have been assessed, in case a procedure is needed, and do not drive yourself.",
  cardiac:"Chest pain/pressure — especially with sweating, breathlessness, or pain spreading to arm/jaw — can be a heart attack.",
  breathing:"Severe difficulty breathing needs emergency care now.",
@@ -587,6 +638,10 @@ emergencyAdvice: {
    the escalation itself. For these ids the app shows a risk-based headline and
    lists what must be ruled out, in rough order of danger. Ids NOT listed here
    are near-pathognomonic (anaphylaxis, opioid overdose) and are named plainly. */
+/* Not every red flag is an ambulance. These need care today or this week, and
+   labelling them "EMERGENCY" would both frighten people and, worse, teach them
+   to discount the banner when it really is one. */
+urgentIds:["pyelonephritis_flag","cellulitis_flag","rabies_flag","oral_cancer_flag","tia","nph","subdural"],
 emergencyDifferentials: {
  atypical_acs:["A heart attack — which in older and diabetic people often comes with no chest pain",
    "A serious infection turning body-wide (sepsis)",
@@ -1384,6 +1439,341 @@ conds: [
   "Rapid hair growth, voice deepening, or male-pattern balding — needs urgent hormone testing",
   "Very heavy or prolonged bleeding when periods do come","Darkened velvety skin at the neck — a sign of insulin resistance"],
  emerg:["Heavy bleeding soaking more than one pad an hour with dizziness","Severe one-sided pelvic pain with vomiting (possible ovarian torsion)","Sudden severe pelvic pain with a positive pregnancy test"]},
+
+{id:"pneumonia", rg:"chest", nm:"Pneumonia (chest infection)", refer:true,
+ al:["pneumonia","chest infection","lung infection","nimonia"],
+ sys:"resp", doctor:"General physician — same day",
+ modern:[
+  {t:"Fever with cough and breathlessness, especially with one-sided chest pain worse on breathing in, suggests pneumonia rather than a simple chest cold."},
+  {t:"This needs a doctor today and almost certainly an antibiotic chosen for you — it is not a self-treatable illness, and delay is what turns pneumonia dangerous."},
+  {t:"Safe to do meanwhile: paracetamol 500-650 mg after food for fever and pain, plenty of fluids, and rest sitting propped up rather than flat.", f:"pcm"},
+  {t:"Do not take leftover antibiotics from a previous illness — wrong drug, wrong dose and wrong duration all drive resistance and can mask the picture."}],
+ ayur:["Supportive only while you arrange care: warm water, tulsi-ginger decoction, steam inhalation.",
+  "Sitopaladi churna with honey is the classical supportive for cough with fever — alongside, never instead of, medical treatment.",
+  "Avoid cold drinks, curd and daytime sleep during a chest infection."],
+ tests:["fever_high"],
+ seeDoc:["Today — this is a see-a-doctor condition, not a home-care one","Older adult, diabetic, pregnant, or with heart or lung disease — go sooner"],
+ emerg:["Breathless at rest or unable to speak full sentences","Blue lips, confusion or drowsiness","Chest pain with collapse","Oxygen saturation below 94% if you have a pulse oximeter"]},
+
+{id:"asthma", rg:"chest", nm:"Asthma / wheezing illness", refer:true,
+ al:["asthma","wheezing","wheeze","dama","inhaler","breathing difficulty at night"],
+ sys:"resp", doctor:"Physician / pulmonologist",
+ modern:[
+  {t:"Wheeze and breathlessness that come and go — worse at night, with exercise, cold air or dust — suggest asthma. It is very manageable, but it needs a proper diagnosis and a prescribed inhaler."},
+  {t:"Asthma is treated with two different inhalers: a reliever for symptoms and a preventer taken daily even when well. Most poorly-controlled asthma in India is someone using only the reliever."},
+  {t:"Do not buy or borrow an inhaler without assessment, and never take oral steroids on your own."},
+  {t:"Identify and reduce triggers: dust, smoke, incense, mosquito coils, cold air, strong perfumes. Not smoking, and no one smoking indoors, matters more than any supplement."},
+  {t:"If you already have a reliever inhaler and are wheezing: 2 puffs through a spacer, repeat after 20 minutes if needed, and seek help if it isn't settling."}],
+ ayur:["Tamaka shwasa is the classical correlate; treatment is Kapha- and Vata-directed.",
+  "Sitopaladi or Talisadi churna with honey, and Vasa (Adhatoda) are the traditional supports — use alongside prescribed treatment, not instead of it.",
+  "Steam with ajwain, warm light food, early dinner; avoid curd, cold water and heavy fried food at night."],
+ tests:[],
+ seeDoc:["To get properly diagnosed and prescribed the right inhalers","Using your reliever more than twice a week — that means it is not controlled",
+  "Night-time waking with cough or wheeze","Symptoms interfering with exercise, work or school"],
+ emerg:["Can only speak a few words at a time","Reliever inhaler not helping after repeated doses","Chest sucking in under the ribs, or blue lips","Becoming drowsy or exhausted with the effort of breathing"]},
+
+{id:"copd", rg:"chest", nm:"COPD (chronic lung disease)", refer:true,
+ al:["copd","chronic bronchitis","emphysema","smoker cough","breathless on walking"],
+ sys:"resp", doctor:"Pulmonologist",
+ modern:[
+  {t:"Long-standing cough with sputum and breathlessness on exertion, in a smoker or someone exposed to chulha or biomass smoke, suggests COPD. Diagnosis needs a simple breathing test (spirometry)."},
+  {t:"The single most effective treatment is stopping smoking and removing smoke exposure — it slows the decline in a way no medicine matches. Improved cooking ventilation matters as much as tablets for many Indian households."},
+  {t:"Inhalers are prescription-chosen for COPD and differ from asthma inhalers. Ask about the annual flu vaccine and the pneumococcal vaccine — both reduce the flare-ups that cause hospital admissions."},
+  {t:"Safe meanwhile: keep active within your limits, treat any fever with paracetamol, stay well hydrated.", f:"pcm"}],
+ ayur:["Supportive: steam inhalation, Sitopaladi churna, warm sesame oil chest massage.",
+  "Pranayama and gentle graded walking are genuinely useful for breathlessness.",
+  "Avoid cold, damp and smoke exposure — including incense and mosquito coils indoors."],
+ tests:["cough3w"],
+ seeDoc:["To confirm with spirometry and get the right inhalers","Increasing breathlessness, or more flare-ups than usual",
+  "Ankle swelling, or weight loss","Coughing blood — needs urgent assessment"],
+ emerg:["Breathless at rest or confused","Blue lips","Unable to complete a sentence","Drowsiness with laboured breathing"]},
+
+{id:"tb", rg:"chest", nm:"Tuberculosis (suspected)", refer:true,
+ al:["tb","tuberculosis","cough for weeks","chronic cough","night sweats","coughing blood","tapedik"],
+ sys:"resp", doctor:"DOTS centre / chest physician — free under India's national programme",
+ modern:[
+  {t:"Any cough lasting more than 2 weeks in India should be tested for TB — especially with weight loss, evening fever, night sweats, or blood in the sputum."},
+  {t:"Testing and treatment are FREE at government DOTS centres, including sputum testing and the full course of medicines. You do not need a private hospital for this."},
+  {t:"TB is completely curable, but only with the full 6-month course. Stopping early because you feel better is what creates drug-resistant TB — which is far harder to treat."},
+  {t:"Do not take any anti-TB medicine without confirmed diagnosis and supervision, and never take a partial or borrowed course."},
+  {t:"Until assessed: cover your mouth when coughing, use a separate well-ventilated room if possible, and make sure household contacts — especially children and elderly — get screened."}],
+ ayur:["Rajayakshma is the classical description. Ayurveda can support nutrition and strength during treatment but must never replace anti-TB drugs.",
+  "Nutrition is critical: milk, ghee, protein, and adequate calories — under-nutrition both causes and worsens TB.",
+  "Chyawanprash and Ashwagandha as rasayana support during recovery, with your doctor's knowledge."],
+ tests:["cough3w"],
+ seeDoc:["Now — sputum testing is the next step, and it is free","Household contact with TB","HIV positive, diabetic, or on steroids — screen earlier"],
+ emerg:["Coughing significant amounts of blood","Severe breathlessness","Chest pain with collapse"]},
+
+{id:"dengue", rg:"systemic", nm:"Dengue (suspected)", refer:true,
+ al:["dengue","dengu","platelet","breakbone fever","pain behind eyes"],
+ sys:"infection", doctor:"Physician — same day, with platelet count",
+ modern:[
+  {t:"High fever with severe body and joint ache, headache and pain behind the eyes during or after monsoon suggests dengue. It needs a blood test — platelet count and NS1/serology."},
+  {t:"Paracetamol ONLY for fever and pain — 500-650 mg after food, up to 4 times a day. Absolutely no ibuprofen, aspirin, diclofenac or combination painkillers: they increase bleeding risk in dengue and are a common cause of avoidable deterioration.", f:"pcm"},
+  {t:"Drink far more than usual — ORS, coconut water, rice water, soups. Aim to keep passing pale urine every few hours; this is what prevents most complications."},
+  {t:"Critically: the dangerous phase is when the fever FALLS, usually days 4-6, not at its peak. Feeling worse as the fever settles is a warning sign, not recovery."},
+  {t:"Papaya leaf extract is widely used; evidence is weak and it is not a substitute for monitoring platelets and hydration."}],
+ ayur:["Supportive: Giloy (Guduchi) decoction and tulsi are traditional for jvara and are widely used alongside monitoring.",
+  "Light, warm, easily digested food; plenty of fluids.",
+  "Papaya leaf juice is traditional here but should never delay a platelet check."],
+ tests:["fever_high"],
+ seeDoc:["Today, for a platelet count and dengue test","Daily platelet monitoring if confirmed","Any bleeding, however minor"],
+ emerg:["Severe abdominal pain or persistent vomiting","Bleeding gums, nose, or blood in vomit or stool",
+  "Cold clammy skin, restlessness, or fainting","Sudden drop in temperature with worsening condition","Reduced urine output"]},
+
+{id:"malaria", rg:"systemic", nm:"Malaria (suspected)", refer:true,
+ al:["malaria","malaria fever","chills and rigors","shivering fever"],
+ sys:"infection", doctor:"Physician — same day, with blood smear",
+ modern:[
+  {t:"Fever coming in distinct spikes with shaking chills followed by drenching sweats, especially in or after travel to a malarious area, needs a blood smear or rapid test the same day."},
+  {t:"Malaria treatment depends on the species and local resistance — it must be prescribed after testing, never guessed. Testing and treatment are free at government facilities."},
+  {t:"Paracetamol for fever, and plenty of fluids, while you arrange the test.", f:"pcm"},
+  {t:"Falciparum malaria can deteriorate within hours, so do not wait for a second or third fever spike to seek testing."}],
+ ayur:["Vishama jvara is the classical description for intermittent fevers.",
+  "Guduchi and tulsi as supportive measures only — malaria requires specific antimalarial drugs.",
+  "Light diet, ample fluids, rest."],
+ tests:["fever_high"],
+ seeDoc:["Today, for a smear or rapid test","Pregnant, a child, or returning from a high-risk area — sooner"],
+ emerg:["Confusion, drowsiness or fits","Yellow eyes, or very dark urine","Breathlessness","Unable to keep fluids down","Passing little or no urine"]},
+
+{id:"typhoid", rg:"systemic", nm:"Typhoid / enteric fever (suspected)", refer:true,
+ al:["typhoid","enteric fever","motijhara","widal"],
+ sys:"infection", doctor:"Physician — with blood culture",
+ modern:[
+  {t:"Fever climbing steadily over several days with headache, abdominal discomfort and poor appetite suggests enteric fever. Blood culture is the proper test; the Widal test alone is unreliable and is over-used."},
+  {t:"This needs a prescribed antibiotic course chosen for local resistance patterns — self-medication with azithromycin or cefixime bought over the counter is a major driver of the resistant typhoid now common in India."},
+  {t:"Paracetamol for fever, plenty of fluids, and soft easily-digested food while you get tested.", f:"pcm"},
+  {t:"Complete whatever course is prescribed. Relapse and carrier states follow half-finished treatment."},
+  {t:"Boiled or filtered water and careful food hygiene protect the rest of the household. A typhoid vaccine exists and is worth asking about."}],
+ ayur:["Supportive: Guduchi, light khichdi, buttermilk once fever settles.",
+  "Classical texts emphasise langhana (light diet) in jvara — this aligns with modern advice for enteric fever.",
+  "Avoid heavy, oily and spicy food throughout."],
+ tests:["fever3d"],
+ seeDoc:["Fever beyond 3-4 days without a clear cause — get cultured","Anyone in the household with confirmed typhoid"],
+ emerg:["Sudden severe abdominal pain with a rigid abdomen — possible perforation, a third-week risk",
+  "Blood in stool or black stools","Confusion or extreme drowsiness","Unable to keep any fluids down"]},
+
+{id:"covid", rg:"systemic", nm:"COVID-19 (suspected)", refer:true,
+ al:["covid","corona","coronavirus","lost smell","lost taste"],
+ sys:"infection", doctor:"Physician (telephone consultation is usually sufficient)",
+ modern:[
+  {t:"Fever, cough, sore throat and fatigue — particularly with loss of smell or taste — may be COVID. Most cases are managed at home."},
+  {t:"Paracetamol for fever and aches, fluids, rest, and isolation from household members as far as practical.", f:"pcm"},
+  {t:"Monitor oxygen saturation with a pulse oximeter if you have one. Below 94% at rest, or a drop after walking, needs medical assessment."},
+  {t:"Do not take antibiotics, steroids, ivermectin or antivirals on your own. Steroids taken early actively worsen outcomes; they are only useful in specific situations a doctor judges."},
+  {t:"Higher risk — over 60, diabetes, heart or lung disease, pregnancy, immunosuppression — means contact a doctor early rather than waiting."}],
+ ayur:["Supportive: warm water, steam, tulsi-ginger-turmeric decoction, adequate rest and protein.",
+  "Ashwagandha and Chyawanprash during recovery for fatigue, with your doctor's knowledge.",
+  "Pranayama during recovery helps breathlessness and anxiety."],
+ tests:[],
+ seeDoc:["Breathlessness at any point","Symptoms worsening after day 5-7","High-risk group","Fever beyond 5 days"],
+ emerg:["Oxygen saturation below 94%","Breathless at rest, or blue lips","Chest pain or pressure","Confusion or difficulty waking"]},
+
+{id:"ulcer_peptic", rg:"abdomen", nm:"Peptic ulcer (suspected)", refer:true,
+ al:["peptic ulcer","stomach ulcer","gastric ulcer","duodenal ulcer","h pylori","ulcer in stomach"],
+ sys:"gi", doctor:"Gastroenterologist / physician",
+ modern:[
+  {t:"Upper abdominal pain that wakes you at night, or is clearly related to meals, with a history of painkiller use — suggests an ulcer rather than simple acidity."},
+  {t:"This needs testing for H. pylori and often an endoscopy, plus a proper acid-suppression course. Antacids alone treat the symptom while the ulcer continues."},
+  {t:"Stop all NSAIDs — ibuprofen, diclofenac, aspirin, and the combination pain powders sold loose. These are the commonest cause and continuing them risks bleeding or perforation.", f:"nsaid"},
+  {t:"Use paracetamol for pain instead, and an antacid for symptom relief while you arrange assessment.", f:"pcm"},
+  {t:"Avoid alcohol and smoking; both delay healing substantially."}],
+ ayur:["Amlapitta / parinama shula are the classical correlates.",
+  "Shatavari, licorice (yashtimadhu) and Avipattikar churna are the traditional supports; licorice is well documented for gastric mucosa.",
+  "Eat at regular times, never skip meals, and avoid very spicy, sour and fermented foods while healing."],
+ tests:["acidity_chronic"],
+ seeDoc:["Symptoms beyond 2 weeks, or recurring after treatment","Any NSAID use with stomach pain","Over 45 with new upper abdominal pain"],
+ emerg:["Vomiting blood, or material like coffee grounds","Black tarry stools","Sudden severe pain with a board-hard abdomen","Fainting or extreme weakness"]},
+
+{id:"dysentery", rg:"abdomen", nm:"Dysentery (blood in stool with fever)", refer:true,
+ al:["dysentery","blood in stool with fever","khooni dast","bloody diarrhea","mucus in stool"],
+ sys:"gi", doctor:"Physician — same day",
+ modern:[
+  {t:"Loose stools containing blood or mucus, with fever and cramping, is dysentery — a different situation from ordinary loose motions and one that usually needs a specific antibiotic after a stool test."},
+  {t:"Do NOT take loperamide or other stopping medicines. Trapping the infection inside worsens the illness and risks toxic dilation of the colon."},
+  {t:"Rehydration is the priority meanwhile: ORS after every loose stool, plus rice water, buttermilk, coconut water. Keep passing urine."},
+  {t:"Paracetamol is safe for fever. Avoid ibuprofen with gut inflammation.", f:"pcm"},
+  {t:"Boiled water and hand hygiene for the household — this spreads easily."}],
+ ayur:["Pravahika is the classical correlate.",
+  "Kutaja (Holarrhena) is the specific classical herb for bloody diarrhoea; Kutajarishta is the standard preparation — alongside medical assessment.",
+  "Buttermilk with roasted cumin and a little rock salt; rice gruel; avoid milk and heavy food until settled."],
+ tests:["diarrhea_persist"],
+ seeDoc:["Same day, with a stool test","A child, elderly or pregnant person","Fever above 38.5°C with the blood"],
+ emerg:["Signs of significant dehydration — very little urine, dizziness on standing, sunken eyes",
+  "Abdomen becoming swollen, hard and very painful while the diarrhoea stops","Confusion or extreme drowsiness","Heavy visible bleeding"]},
+
+{id:"gallstones", rg:"abdomen", nm:"Gallstones / biliary colic", refer:true,
+ al:["gallstone","gall bladder","gallbladder","pitt ki pathri","stone in gallbladder","pain after fatty food"],
+ sys:"gi", doctor:"Surgeon (general surgery) after ultrasound",
+ modern:[
+  {t:"Severe episodic pain in the right upper abdomen, often after fatty food, sometimes radiating to the right shoulder blade — this is typical biliary colic. An ultrasound confirms it."},
+  {t:"Attacks are managed with pain relief and a low-fat diet, but stones that cause symptoms are usually removed surgically. Medicines do not dissolve them in practice."},
+  {t:"Meanwhile: low-fat diet, small frequent meals, avoid fried food, ghee-heavy dishes and full-cream dairy. Paracetamol for pain.", f:"pcm"},
+  {t:"Do not ignore recurrent attacks — each carries a risk of the stone blocking the duct or causing pancreatitis, both of which are emergencies."}],
+ ayur:["Supportive only; surgical stones need surgical assessment.",
+  "Bhumyamalaki and Kutki are traditional liver-supportive herbs.",
+  "Warm water, light early dinner, and strict avoidance of fried and heavy food."],
+ tests:[],
+ seeDoc:["To arrange an ultrasound and a surgical opinion","Repeated attacks","Diabetic — complications are quieter and more dangerous"],
+ emerg:["Fever with chills and yellow eyes — infected bile duct, needs emergency drainage",
+  "Severe pain going through to the back with vomiting — possible pancreatitis","Pain lasting over 6 hours","Yellowing of skin or eyes with dark urine"]},
+
+{id:"ra", rg:"limb", nm:"Inflammatory arthritis (suspected RA)", refer:true,
+ al:["rheumatoid","rheumatoid arthritis","joint swelling many","morning stiffness","gathiya","small joints swollen"],
+ sys:"musculo", doctor:"Rheumatologist",
+ modern:[
+  {t:"Several joints painful and swollen symmetrically — hands, wrists, feet — with morning stiffness lasting over an hour that eases with movement, points to inflammatory arthritis rather than wear-and-tear."},
+  {t:"This matters urgently in a way people underestimate: early treatment within the first months prevents permanent joint damage. Waiting a year to 'see if it settles' costs joints that cannot be recovered."},
+  {t:"You need blood tests (RF, anti-CCP, ESR/CRP) and a rheumatologist. Treatment is with disease-modifying drugs, not painkillers alone."},
+  {t:"Meanwhile: paracetamol for pain, keep joints gently moving, warm compresses in the morning.", f:"pcm"},
+  {t:"Do not take long-term steroids obtained without prescription — very common here, and it causes diabetes, bone loss and Cushing's over time."}],
+ ayur:["Amavata is the classical correlate — treated as ama (metabolic toxin) with Vata.",
+  "Guggulu preparations (Simhanada, Yogaraja) and Guduchi are standard, practitioner-guided, and can complement DMARDs with your rheumatologist's knowledge.",
+  "Warm light food, ginger, avoiding curd and cold heavy food; gentle daily movement rather than rest."],
+ tests:["joint_chronic"],
+ seeDoc:["Within weeks, not months — early treatment changes the outcome","Morning stiffness over an hour","Small joints of hands or feet swollen","Family history of autoimmune disease"],
+ emerg:["A single hot swollen joint with fever — infection must be excluded urgently","Chest pain or breathlessness","New numbness or weakness in the limbs"]},
+
+{id:"thyroid", rg:"systemic", nm:"Thyroid disorder (suspected)", refer:true,
+ al:["thyroid","hypothyroid","hyperthyroid","tsh","thyroid problem","weight gain hair fall","neck swelling"],
+ sys:"endocrine", doctor:"Physician / endocrinologist",
+ modern:[
+  {t:"Fatigue with weight change, hair fall, cold or heat intolerance, constipation or loose stools, and menstrual changes — these point to thyroid dysfunction. A simple TSH blood test answers it."},
+  {t:"Thyroid disease is common in India and very treatable, but the dose must be individualised and monitored. Never start or adjust thyroxine on your own."},
+  {t:"If prescribed thyroxine: take it on an empty stomach, 30-60 minutes before food, and keep at least a 4-hour gap from calcium and iron tablets, which block its absorption."},
+  {t:"Use iodised salt. Beyond that, no supplement or diet corrects a thyroid problem."}],
+ ayur:["Kanchanara guggulu is the classical formulation for glandular swellings, practitioner-guided.",
+  "Yoga — particularly Sarvangasana and Ujjayi pranayama — is traditionally indicated; ask your doctor if you have nodules or heart disease.",
+  "Do not stop prescribed thyroxine in favour of herbs; combine them with your doctor's knowledge."],
+ tests:["chronic_fatigue"],
+ seeDoc:["To get a TSH test — the diagnosis cannot be made on symptoms alone","Pregnant or planning pregnancy — thyroid affects the baby's development",
+  "A visible neck swelling or lump","Already on thyroxine with persisting symptoms — the dose may need review"],
+ emerg:["Known overactive thyroid with fever, racing heart, tremor and confusion — thyroid storm",
+  "Known underactive thyroid, now very cold, slow and unresponsive — myxoedema",
+  "Rapidly enlarging neck swelling with difficulty breathing or swallowing"]},
+
+{id:"depression", rg:"systemic", nm:"Depression / low mood", refer:true,
+ al:["depression","depressed","low mood","no interest","hopeless","udaasi","mann nahi lagta","feeling worthless"],
+ sys:"mental", doctor:"Psychiatrist or a physician you trust — both can help",
+ modern:[
+  {t:"Persistent low mood or loss of interest in things you used to enjoy, most of the day for two weeks or more, is depression. It is a medical condition, not weakness — and it responds well to treatment."},
+  {t:"In India it very often shows up as physical symptoms — persistent aches, tiredness, 'gas', poor sleep — rather than sadness. If tests keep coming back normal, this is worth considering seriously."},
+  {t:"What genuinely helps while you arrange care: daily walking or exercise (effect sizes comparable to medication in mild-moderate depression), regular sleep and wake times, sunlight, and telling one person you trust."},
+  {t:"Alcohol makes depression worse, not better, even though it feels otherwise in the moment."},
+  {t:"Treatment is talking therapy, medication, or both — chosen with a professional. Do not start or stop antidepressants on your own; stopping suddenly causes withdrawal symptoms."},
+  {t:"Free confidential support in India: Tele-MANAS 14416 (24×7, multiple languages), and iCall 9152987821."}],
+ ayur:["Ashwagandha and Brahmi are traditionally used for mano-vikara and have some modern evidence for stress and anxiety — as support alongside treatment, not instead of it.",
+  "Abhyanga (warm oil self-massage) and regular routine (dinacharya) are strongly emphasised — sleep and rhythm are treated as medicine.",
+  "Pranayama and meditation daily; avoid isolation, irregular sleep and skipped meals."],
+ tests:["chronic_fatigue"],
+ seeDoc:["Symptoms lasting more than two weeks","Unable to work, study or care for family","Not sleeping or eating",
+  "Using alcohol or substances to cope","After childbirth — postnatal depression is common and treatable"],
+ emerg:["Thoughts of harming yourself or ending your life — call Tele-MANAS 14416 or iCall 9152987821 now, or go to a hospital",
+  "A plan, or means gathered","Hearing voices, or beliefs others find strange","Not drinking or eating at all"]},
+
+{id:"pyelonephritis", rg:"back", nm:"Kidney infection", refer:true,
+ al:["kidney infection","pyelonephritis","fever with back pain urine","flank pain fever"],
+ sys:"urinary", doctor:"Physician — same day",
+ modern:[
+  {t:"Burning urine with fever, chills and pain in the flank or back means the infection has reached the kidney. This is beyond what home measures or a short over-the-counter course can treat."},
+  {t:"It needs a urine culture and a proper antibiotic course, often 7-14 days, sometimes intravenous. Under-treated kidney infection scars the kidney permanently."},
+  {t:"Meanwhile: drink plenty of water, paracetamol for fever and pain.", f:"pcm"},
+  {t:"Pregnancy makes this urgent — kidney infection in pregnancy risks preterm labour and needs same-day care."}],
+ ayur:["Supportive only: coriander water, barley water, coconut water for their traditional mutrala (diuretic) action.",
+  "Gokshura and Punarnava are classical urinary herbs, useful in recovery rather than acute infection.",
+  "Plenty of fluids; avoid holding urine."],
+ tests:["uti"],
+ seeDoc:["Same day — this needs culture-guided antibiotics","Pregnant, diabetic, or a single kidney — urgently","Recurrent infections need investigation for stones or reflux"],
+ emerg:["Confusion, very fast breathing, or mottled cold skin — sepsis","Unable to keep fluids or medicines down","Passing very little urine","Severe pain with vomiting"]},
+
+{id:"stone", rg:"back", nm:"Kidney / urinary stone", refer:true,
+ al:["kidney stone","renal colic","stone in kidney","pathri","stone pain","loin to groin pain"],
+ sys:"urinary", doctor:"Urologist",
+ modern:[
+  {t:"Severe waves of pain from the loin around to the groin, often with nausea and an inability to sit still, is classic renal colic. Blood in the urine is common."},
+  {t:"Diagnosis is by ultrasound or CT. Small stones usually pass on their own with fluids and pain relief; larger ones need a procedure."},
+  {t:"Drink 2.5-3 litres of water daily — this is the single most effective measure both for passing a stone and preventing the next one."},
+  {t:"Pain relief is usually an NSAID, which works better than paracetamol for renal colic — but only if your kidneys and stomach allow it, so it should be prescribed.", f:"nsaid"},
+  {t:"Strain your urine to catch the stone; its composition determines prevention advice."},
+  {t:"Prevention: adequate water, reduce salt, moderate animal protein. Do not cut calcium in the diet — that increases stone risk, contrary to common belief."}],
+ ayur:["Ashmari is the classical description. Gokshura, Punarnava, Varuna and Pashanabheda are the traditional stone herbs.",
+  "Barley water, coconut water and plenty of plain water are the household measures.",
+  "These support small stones passing; they do not remove obstructing stones, which need urological treatment."],
+ tests:["uti"],
+ seeDoc:["For imaging to size and locate the stone","Recurrent stones — needs metabolic workup","Single kidney, or known kidney disease"],
+ emerg:["Fever with chills alongside the pain — an infected obstructed kidney is a surgical emergency",
+  "Unable to pass urine at all","Persistent vomiting preventing fluids","Pain uncontrolled despite medication"]},
+
+{id:"pregnancy_care", rg:"pelvis", nm:"Pregnancy-related concern", refer:true,
+ al:["pregnant","pregnancy","expecting","garbhavastha","morning sickness","pregnancy problem"],
+ sys:"womens", doctor:"Obstetrician / ANM at your nearest health centre",
+ modern:[
+  {t:"In pregnancy, the safest assumption is that symptoms deserve a check rather than home management — the threshold for asking is deliberately low."},
+  {t:"Paracetamol is the painkiller of choice. Avoid ibuprofen, diclofenac and aspirin unless a doctor specifically directs otherwise, especially after 20 weeks.", f:"pcm"},
+  {t:"For nausea: small frequent meals, dry snacks before rising, ginger, and avoiding an empty stomach. If you cannot keep fluids down, that needs review, not endurance."},
+  {t:"Take folic acid, iron and calcium as prescribed. Anaemia is very common in Indian pregnancies and worth actively monitoring."},
+  {t:"Do not take any medicine, herbal preparation or supplement without checking — including Ayurvedic formulations, several of which are contraindicated in pregnancy."},
+  {t:"Keep all antenatal appointments even when you feel entirely well; the checks are for problems you cannot feel, like blood pressure and growth."}],
+ ayur:["Garbhini paricharya (month-wise regimen) emphasises nourishment, calm routine and adequate rest.",
+  "Milk, ghee, dates, almonds and easily digestible food; avoid fasting.",
+  "Several herbs are contraindicated in pregnancy — take nothing without a qualified practitioner who knows you are pregnant."],
+ tests:["anemia_suspect"],
+ seeDoc:["Any bleeding, at any stage","Reduced or absent baby movements after 24 weeks","Persistent vomiting, unable to keep fluids down",
+  "Fever","Burning urine — untreated UTI risks preterm labour","Swelling of face or hands, or a persistent headache"],
+ emerg:["Heavy bleeding, or constant severe abdominal pain with a hard abdomen",
+  "Severe headache with visual spots or swelling — possible pre-eclampsia","Fits or convulsions",
+  "Waters broken with fever or foul-smelling fluid","Baby not moving at all"]},
+
+{id:"cellulitis", rg:"skin", nm:"Cellulitis (skin infection)", refer:true,
+ al:["cellulitis","skin infection","spreading redness","red swollen leg","infected wound"],
+ sys:"skin", doctor:"Physician — same day",
+ modern:[
+  {t:"A spreading area of red, warm, tender, swollen skin — often on the leg, often after a small break in the skin — is cellulitis. It needs oral antibiotics; creams do not treat it."},
+  {t:"Mark the edge of the redness with a pen and note the time. If it spreads beyond the mark within hours, that needs urgent reassessment — this simple step is genuinely useful."},
+  {t:"Meanwhile: elevate the limb above heart level when resting, paracetamol for pain, and keep the area clean.", f:"pcm"},
+  {t:"Diabetes changes this substantially — infection spreads faster, hurts less, and needs earlier and more aggressive treatment. Check your feet daily if diabetic."}],
+ ayur:["Supportive only — bacterial cellulitis requires antibiotics.",
+  "Neem and turmeric preparations traditionally support skin infection alongside treatment.",
+  "Keep the limb elevated and rested; avoid applying heavy oils over an actively infected area."],
+ tests:[],
+ seeDoc:["Same day for antibiotics","Diabetic, or poor circulation — sooner","Facial or hand involvement","Not improving within 48 hours of starting antibiotics"],
+ emerg:["Pain far out of proportion to how the skin looks","Skin turning dusky, purple or black, or blistering",
+  "Crackling under the skin","Fever with confusion or feeling profoundly unwell","Red streaks tracking up the limb rapidly"]},
+
+{id:"rabies_risk", rg:"skin", nm:"Animal bite / rabies exposure", refer:true,
+ al:["dog bite","animal bite","cat bite","monkey bite","bat","rabies","kutte ne kata","scratch from dog"],
+ sys:"infection", doctor:"Nearest hospital or anti-rabies clinic — TODAY",
+ modern:[
+  {t:"Any bite, scratch or lick on broken skin from a dog, cat, monkey, mongoose or bat must be treated as a possible rabies exposure. Rabies is effectively 100% fatal once symptoms begin — and completely preventable before that."},
+  {t:"DO THIS NOW: wash the wound with soap under running water for a full 15 minutes. This single step removes a large share of the virus and measurably reduces risk. Time it — most people wash for seconds."},
+  {t:"Then apply an antiseptic such as povidone-iodine or alcohol. Do not suture, bandage tightly, or apply chillies, oil, turmeric, mud or herbal pastes — traditional applications are common here and they trap the virus."},
+  {t:"Go the same day for anti-rabies vaccination. It is free at government hospitals in India. Deep or multiple wounds, or bites on the face, hands or genitals, also need rabies immunoglobulin — say this at the counter."},
+  {t:"Complete the full vaccine schedule even if the animal looks healthy or is a known pet. An apparently well dog can be infectious days before it appears ill."},
+  {t:"Also ask about a tetanus booster if you have not had one within 5 years."}],
+ ayur:["Alarka visha is described in classical texts, but no Ayurvedic treatment substitutes for rabies vaccination — this is one place to be unambiguous.",
+  "Traditional pastes applied to bite wounds are actively harmful; wash with soap and water instead.",
+  "Seek vaccination first; supportive care afterwards."],
+ tests:[],
+ seeDoc:["Today, without exception, for vaccination","Any bite in a child — they are bitten on the face and hands more often"],
+ emerg:["Bite on the face, neck, hands or genitals","Deep, multiple or heavily bleeding wounds","Bite from a bat, or a wild or unprovoked animal",
+  "Any difficulty swallowing, fear of water, agitation or confusion after a past bite — go to hospital immediately"]},
+
+{id:"oral_cancer", rg:"head", nm:"Non-healing mouth ulcer or patch", refer:true,
+ al:["mouth ulcer not healing","white patch mouth","red patch mouth","cannot open mouth","tobacco ulcer","gutkha","mouth cancer"],
+ sys:"dental", doctor:"Dental surgeon or ENT — for biopsy",
+ modern:[
+  {t:"A mouth ulcer or patch that has not healed in 3 weeks is not an ordinary ulcer and must not be treated as one — especially with any history of tobacco, gutkha, khaini, paan masala or areca nut."},
+  {t:"Warning signs: a white or red patch that will not rub off, a lump, difficulty opening the mouth, numbness of the lip, a loose tooth without dental cause, or a neck lump."},
+  {t:"India carries one of the world's highest oral cancer burdens, largely from smokeless tobacco. Caught early it is highly curable; caught late it is disfiguring and often fatal — and the gap between those is usually months of waiting."},
+  {t:"You need a specialist examination and, if indicated, a biopsy. Do not accept repeated courses of ointment or vitamins for a non-healing ulcer without one."},
+  {t:"Stopping tobacco and areca nut now materially changes the outcome, at any stage. Quitlines and cessation clinics are free in India."}],
+ ayur:["Ayurveda can support oral health and healing but must never delay biopsy of a non-healing lesion.",
+  "Oil pulling and triphala mouth rinses support general oral hygiene.",
+  "Tobacco and areca nut cessation is the intervention that matters; everything else is secondary."],
+ tests:[],
+ seeDoc:["Any mouth ulcer or patch lasting over 3 weeks — this week, not eventually","Any tobacco or areca nut use, even without symptoms — get screened annually",
+  "Progressive difficulty opening the mouth","A lump in the neck"],
+ emerg:["Difficulty breathing or swallowing","Significant bleeding from the mouth","Rapidly enlarging swelling of the mouth or neck"]},
 
 {id:"generic", rg:"systemic", nm:"General health concern", al:[],
  sys:"general", doctor:"General physician",

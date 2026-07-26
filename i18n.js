@@ -32,6 +32,11 @@ en: {
  tests_title:"Tests I recommend", upload_prompt:"When you have the report, upload a photo/PDF here with the 📎 button — I'll read it and complete your full analysis. Meanwhile, the plan above is safe to start.",
  seedoc_title:"See a doctor if", doctor_see:"Right doctor to see", emerg_title:"Go to hospital IMMEDIATELY if",
  emerg_now:"⚠️ EMERGENCY — please act now",
+ emerg_urgent:"⚠️ URGENT — needs medical attention, not home treatment",
+ urgent_msg:"This is not something to manage at home or wait out. Arrange the visit described above rather than calling an ambulance — but do not let it drift.",
+ referNote:"This one needs a doctor rather than home treatment. Right person to see:",
+ meanwhile_title:"What's safe to do meanwhile",
+
  emerg_generic:"⚠️ EMERGENCY — immediate medical evaluation needed",
  couldBe:"This needs to be ruled out — in order of danger:", emerg_msg:"Based on what you've said, this needs a hospital NOW, not home treatment. Please call your local emergency number (India 108/102) or go to the nearest emergency department immediately.",
  while_wait:"While help arrives", report_btn:"Generate medical report", disclaimer:"AI-generated guidance from Docto Online. Educational purposes — not a substitute for examination by a registered medical practitioner. Medicines listed are common OTC options; read labels; doses are for adults unless noted.",

@@ -369,8 +369,12 @@ async function emergencyStop(id, reason){
     ? `<div class="diffs"><b>${t("couldBe")}</b><ul>${diffs.map(d=>`<li>${esc(d)}</li>`).join("")}</ul></div>` : "";
   /* Headline states the urgency, not the diagnosis, whenever the picture is
      ambiguous — a confident wrong label is worse than an honest urgent one. */
-  const headline = diffs && diffs.length ? t("emerg_generic") : t("emerg_now");
-  await addBot(`<div class="emg"><b>${headline}</b><br>${esc(msg)}${diffHtml}<br>${t("emerg_msg")}</div>
+  /* Three levels, not one. Calling a non-healing mouth ulcer an EMERGENCY both
+     frightens people and teaches them to discount the banner when it matters. */
+  const urgent=(DB.urgentIds||[]).includes(id);
+  const headline = urgent ? t("emerg_urgent")
+                 : (diffs && diffs.length ? t("emerg_generic") : t("emerg_now"));
+  await addBot(`<div class="emg"><b>${headline}</b><br>${esc(msg)}${diffHtml}<br>${urgent ? t("urgent_msg") : t("emerg_msg")}</div>
   <h3>${t("while_wait")}</h3><ul>
   <li>Stay with the person; keep them calm, seated or lying as comfortable.</li>
   <li>Do not give food/drink if drowsy, having chest pain, or a possible stroke/surgery situation.</li>
@@ -688,10 +692,14 @@ async function assess(){
     }
   }
   const c=S.cond, conf=confidence();
+  /* A refer-only condition still shows what to do meanwhile, but must lead with
+     the fact that it needs a doctor — otherwise holding measures read as treatment. */
+  const referNote = c.refer ? `<div class="referNote">${t("referNote")} <b>${esc(c.doctor||"")}</b></div>` : "";
   let html=sec("s-assess","activity",t("assess_title"))+`<div class="badges"><span class="badge prim">${t("likely")}: <b>${esc(c.nm)}</b></span><span class="badge">${t("confidence")}: ${esc(conf)}</span></div>`;
   if(S.temp>=103) html+=`<div class="emg">Temperature ${S.temp}°F is high — start the fever plan now and see a doctor today if it doesn't come down.</div>`;
-  // modern
-  html+=sec("s-quick","zap",t("quick_title"))+`<ul>`;
+  html+=referNote;
+  // modern — for refer-only conditions these are holding measures, not treatment
+  html+=sec("s-quick","zap", c.refer ? t("meanwhile_title") : t("quick_title"))+`<ul>`;
   c.modern.forEach(m=>{ const chk=medAllowed(m);
     if(chk.ok){ html+=`<li>${esc(m.t)}${chk.why?` <i style="color:#a65c00">(${esc(chk.why)})</i>`:""}</li>`; }
     else html+=`<li style="color:#8a8a8a;text-decoration:line-through">${esc(m.t)}</li><li style="color:#a65c00">↳ Skipped: ${esc(chk.why)}.</li>`; });
