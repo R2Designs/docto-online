@@ -196,7 +196,7 @@ const NEG_SYMPTOMS="fever|chest pain|chest tightness|chest discomfort|blood|blee
   "blurred vision|double vision|hearing loss|red streaks|phlegm|stridor|drooling|confusion|swelling|"+
   "rash|headache|dizziness|dizzy|lightheaded|fainting|faint|sweating|sweats|clammy|palpitations|"+
   "stiff neck|jaundice|yellowing|weight loss|incontinence|diarrhea|discharge|"+
-  "other symptoms|sudden changes|blood in";
+  "black stools|black stool|blood in stool|blood in my stool|bloody stools|saddle numbness|bladder problems|bowel problems|leg weakness|red streaks|night sweats|weight loss|other symptoms|sudden changes|blood in|self harm|self-harm|suicidal thoughts|thoughts of harming";
 function scrubNegations(low){
   /* Denials usually come as a list — "no hearing loss, weakness, or slurred
      speech" — so once a denial starts, keep consuming the comma-separated items.
@@ -211,8 +211,11 @@ function scrubNegations(low){
        findings such as "not able to pass urine" are never stripped. */
     "\\b(?:no|not|without|denies|negative for|isn'?t|aren'?t|wasn'?t|doesn'?t|don'?t|didn'?t|hasn'?t|haven'?t|never)"+
     "\\s+(?:(?!but\\b|however\\b)[a-z-]+\\s+){0,3}(?:"+NEG_SYMPTOMS+")\\b"+
-    "(?:\\s*,?\\s*(?:or\\s+|and\\s+)?(?!but\\b|however\\b|though\\b|and i\\b|but i\\b)"+
-    "(?:no\\s+)?[a-z][a-z ]{0,25})*", "g");
+    /* Keep consuming the denial list ONLY while the next item is itself a
+       recognised symptom. Previously any comma-separated clause was swallowed, so
+       "no pain anywhere, lost appetite, vomited once, sweating" deleted every real
+       finding after the denial and silenced an atypical heart attack. */
+    "(?:\\s*,?\\s*(?:or\\s+|and\\s+)?(?:no\\s+|not\\s+)?(?:"+NEG_SYMPTOMS+")\\b)*", "g");
   return low
     .replace(denial," ")
     // plant names that merely contain an alarming word
@@ -332,19 +335,22 @@ const FLAG_PRIORITY=[
   // an atypical heart attack outranks the metabolic reading of the same symptoms:
   // being wrong towards "cardiac" is survivable, the reverse often isn't
   "atypical_acs",
-  "aortic_dissection","tamponade","pneumothorax","asthma_severe","epiglottitis","breathing",
+  "aortic_dissection","tamponade","pneumothorax","asthma_severe",
   // a quoted BP in the emergency range, or a calf clot with chest signs, beats a
   // generic chest-pain or eye match built from softer clues
+  // a named drug or named diagnosis beats the generic syndrome that shares its signs:
+  // an MAOI reaction needs MAOI handling, not just "your BP is high"
+  "maoi_crisis","serotonin_syndrome","nms","thyroid_storm","ludwig","epiglottitis","breathing","adrenal_crisis",
   "hypertensive_crisis","dvt_pe","cardiac",
-  "stroke","head_injury","headache_worst","meningococcal","meningitis","sepsis","neutropenic_fever",
-  "maoi_crisis","serotonin_syndrome","thyroid_storm","dka","hyperkalemia","heat_stroke",
+  "tia","stroke","head_injury","headache_worst","meningococcal","meningitis","sepsis","neutropenic_fever",
+  "dka","hyperkalemia","heat_stroke",
   "preeclampsia","abruption","preg_bleed","ectopic","ovarian_torsion","torsion",
   "cauda_equina","spinal_abscess","limb_ischemia","compartment","nec_fasc","splenic_rupture",
   "perforation","hernia_strangulated","cholangitis","obstruction","appendicitis","intussusception",
   "pancreatitis","aaa","acute_abdomen","gi_bleed","pyloric_stenosis","pid_severe",
   "temporal_arteritis","crao","glaucoma_acute","retinal_detach",
   "paracetamol_od","digoxin_tox","lithium_tox","poison","tachy_severe",
-  "subdural","tia","rhabdo","sickle_crisis","co_poisoning","hemoptysis",
+  "subdural","rhabdo","sickle_crisis","co_poisoning","hemoptysis",
   "hematuria","seizure","unconscious","crisis","dehydration"
 ];
 function rankFlags(ids){

@@ -5,9 +5,9 @@ const DB = {
 
 /* ---------- EMERGENCY RED FLAGS (keyword triggers on free text + engine checks) ---------- */
 redFlagKeywords: [
- {k:["chest pain","chest pressure","chest tightness","seene me dard","seene mein dard"], id:"cardiac"},
+ {k:["chest pain","chest pressure","chest tightness","seene me dard","seene mein dard","seene me bahut tez dard","seene me tez dard","chhati me dard"], id:"cardiac"},
  {k:["can't breathe","cannot breathe","breathless at rest","saans nahi","gasping","blue lips"], id:"breathing"},
- {k:["face droop","slurred speech","one side weak","arm weakness sudden","stroke"], id:"stroke"},
+ {k:["face droop","face is drooping","drooping","slurred speech","speech slurred","one side weak","arm went weak","arm weakness sudden","stroke"], id:"stroke"},
  {k:["worst headache","thunderclap"], id:"headache_worst"},
  {k:["stiff neck fever","neck stiffness with fever"], id:"meningitis"},
  {k:["vomiting blood","blood in vomit","khoon ki ulti","coffee ground"], id:"gi_bleed"},
@@ -77,10 +77,11 @@ redFlagPatterns: [
     faster breathing, one vomit, "no pain anywhere" — reads as something mild.
     This must outrank the metabolic reading of the same symptoms. */
  {id:"atypical_acs", need:[
-   ["diabet","elderly","76-year","78-year","80-year","82-year","85-year","grandmother","grandfather",
-    "my mother","my father","senior citizen","70-year","72-year","75-year"],
-   ["sluggish","lethargic","unusually tired","suddenly weak","loss of appetite","lost her appetite",
-    "lost his appetite","not himself","not herself","acting strange","confus"],
+   ["diabet","elderly","grandmother","grandfather","mother","father","senior citizen","year old","year-old",
+    "70 year","72 year","75 year","76 year","78 year","80 year","82 year","85 year","aged 7","aged 8",
+    "70-year","72-year","75-year","76-year","78-year","80-year","82-year","85-year"],
+   ["sluggish","lethargic","unusually tired","suddenly weak","loss of appetite","lost appetite","lost her appetite",
+    "lost his appetite","not himself","not herself","acting strange","confus","suddenly sluggish"],
    ["sweating","clammy","breathing faster","breathing a bit faster","short of breath","vomit","nausea",
     "jaw","shoulder","indigestion"]
  ]},
@@ -116,8 +117,8 @@ redFlagPatterns: [
  {id:"tia", need:[
    ["arm went weak","arm was weak","face droop","speech was slurred","slurred speech","couldn't speak",
     "vision went","numbness on one side","weakness on one side"],
-   ["went away","resolved","back to normal","completely normal","lasted about","for about 15 minutes",
-    "for a few minutes","for 10 minutes","for 20 minutes","temporar"]
+   ["went away","resolved","back to normal","completely normal","normal now","lasted about","for about 15 minutes",
+    "for a few minutes","for 10 minutes","for 20 minutes","for 15 minutes","temporar","then recovered"]
  ]},
  {id:"myasthenic_crisis", need:[
    ["myasthenia","myasthenic"],
@@ -327,13 +328,45 @@ redFlagPatterns: [
  ]},
  /* Rabies exposure — any mammal bite counts */
  {id:"rabies_flag", need:[
-   ["dog","cat","monkey","bat","mongoose","stray","puppy","kitten"],
-   ["bit me","bite","bitten","scratch","scratched","licked"]
+   ["dog","cat","monkey","bat","mongoose","stray","puppy","kitten","kutte","kutta","billi","bandar"],
+   ["bit me","bit my","bit her","bit him","bite","bitten","scratch","scratched","licked","kaat","kaat liya","kata"]
  ]},
  /* Non-healing oral lesion */
  {id:"oral_cancer_flag", need:[
    ["mouth ulcer","ulcer in my mouth","patch in my mouth","white patch","red patch","sore in my mouth","tongue ulcer"],
    ["three weeks","3 weeks","month","months","not healing","won't heal","hasn't healed","never heals","tobacco","gutkha","gutka","khaini","paan","areca","supari"]
+ ]},
+/* Neuroleptic malignant syndrome — antipsychotic + rigidity + fever */
+ {id:"nms", need:[
+   ["haloperidol","olanzapine","risperidone","quetiapine","antipsychotic","chlorpromazine","aripiprazole"],
+   ["rigid","stiff","lead pipe","sweating","fever","104","103","unresponsive","confus"]
+ ]},
+ /* Newborn fever — any fever under 3 months is an emergency */
+ {id:"neonatal_sepsis", need:[
+   ["week old","weeks old","week-old","month old","months old","newborn","neonate","3 week","6 week","2 month"],
+   ["fever","temperature","101","100.","102","hot"],
+   ["won't feed","wont feed","refusing to feed","not feeding","hard to wake","difficult to wake","lethargic",
+    "floppy","soft spot","fontanelle","drowsy"]
+ ]},
+ /* Severe hypoglycaemia — insulin without food */
+ {id:"hypoglycemia", need:[
+   ["insulin","diabetic","sugar"],
+   ["forgot dinner","forgot to eat","missed a meal","missed dinner","skipped a meal","without eating","no food"],
+   ["shaking","shaky","sweating","cold sweat","confus","double vision","dizzy","faint","trembling"]
+ ]},
+ /* Intussusception — the classic triad in an infant */
+ {id:"intussusception", need:[
+   ["month old","months old","month-old","infant","baby","8 month","6 month"],
+   ["crying in waves","crying inconsolably","knees up","pulling knees","drawing knees","screaming in waves","floppy"],
+   ["jelly","redcurrant","dark red stool","dark red jelly","blood in the nappy","blood in the diaper","red stool"]
+ ]},
+/* Ludwig's angina — dental infection closing the airway from below the tongue.
+    Shares drooling and swallowing difficulty with epiglottitis, but the swelling
+    is in the floor of the mouth and neck, and the handling differs. */
+ {id:"ludwig", need:[
+   ["under my tongue","floor of my mouth","floor of mouth","below my tongue","jaw and neck","neck are swollen",
+    "neck is swollen","tongue is pushed","tongue pushed up","under the jaw","submandibular"],
+   ["tooth","dental","toothache","molar","swollen","swelling","hard","drooling","swallow","breathe"]
  ]},
  /* Thyroid storm — known hyperthyroidism plus a trigger and systemic upset.
     Almost always self-explained as "just a stomach bug" or "just anxiety". */
@@ -408,9 +441,9 @@ redFlagPatterns: [
  ]},
  /* Compartment syndrome — after injury or a tight cast */
  {id:"compartment", need:[
-   ["cast","plaster","bandage too tight","after the injury","after my fracture","crush","broke my"],
-   ["pain is getting worse","severe pain","unbearable pain","pain out of proportion","tight","swollen and tight",
-    "numb","tingling","cannot move my toes","cannot move my fingers"]
+   ["cast","plaster","bandage too tight","after the injury","after my fracture","crush","broke my","cast went on","casted"],
+   ["pain is getting worse","severe pain","unbearable pain","excruciating","pain out of proportion","tight","swollen and tight",
+    "numb","tingling","cannot move my toes","cannot move my fingers","stretch my toes","stretching my toes","despite the tablets","despite painkillers"]
  ]},
  /* Acute angle-closure glaucoma */
  {id:"glaucoma_acute", need:[
@@ -880,7 +913,7 @@ conds: [
  seeDoc:["More than 1–2 headaches/week or need painkillers often","Migraine pattern (a doctor can prescribe faster-acting specific medicines — triptans — and preventives)","Headache changing pattern"],
  emerg:["Sudden worst-ever/thunderclap headache","With fever + stiff neck or rash","With weakness/slurred speech/vision loss","After head injury","New headache with vomiting on waking"]},
 
-{id:"migraine", rg:"head", nm:"Migraine", al:["migraine","adha sir dard","one side headache","aadha sar"],
+{id:"migraine", rg:"head", nm:"Migraine", al:["migraine","adha sir dard","one side headache","aadha sar","throbbing one side","one side of my head throbbing","light and sound make it worse","sick before it starts"],
  sys:"neuro", doctor:"Neurologist",
  modern:[
   {t:"Treat EARLY at first sign: ibuprofen 400 mg (after food) or paracetamol 1000 mg + rest in a dark quiet room.", f:"nsaid"},
@@ -965,7 +998,7 @@ conds: [
  tests:[], seeDoc:["Pain recurring over days/weeks","Pain with fever","Pain related to periods (see period-pain plan)"],
  emerg:["Severe pain, or pain moving to lower-right abdomen with fever/vomiting (appendicitis)","Rigid, board-like abdomen","Pain with black stool/blood","Pain in pregnancy","Severe pain with no gas/stool passing"]},
 
-{id:"piles", rg:"pelvis", nm:"Piles (hemorrhoids)", al:["piles","hemorrhoid","bawaseer","bavasir","anal pain","blood while passing stool","fissure"],
+{id:"piles", rg:"pelvis", nm:"Piles (hemorrhoids)", al:["piles","hemorrhoid","bawaseer","bavasir","anal pain","blood while passing stool","fissure","blood on the toilet paper","blood on toilet paper","bleeding after hard stool","streak of blood on paper","red blood on the toilet","blood on the toilet","after a hard stool"],
  sys:"digestive", doctor:"General surgeon / proctologist",
  dq:[{q:"Which fits?",opts:["Bright red blood on wiping, painless","Painful lump at anus","Severe tearing pain with hard stool (fissure-like)","Itching mainly"]}],
  modern:[
@@ -1102,7 +1135,7 @@ conds: [
  tests:[], seeDoc:["Spreading, oozing, painful, or crusted rash (may need prescription creams)","Rash not improving in 1–2 weeks","Scabies-suspect (whole-family treatment needed — doctor confirms)"],
  emerg:["Rash with fever that doesn't fade on glass pressure","Hives with lip/throat swelling or breathlessness","Painful rapidly-spreading red skin with fever"]},
 
-{id:"fungal", rg:"skin", nm:"Fungal infection (ringworm/athlete's foot)", al:["fungal","ringworm","daad","dad khaj","athlete's foot","jock itch","itching groin","fungal infection"],
+{id:"fungal", rg:"skin", nm:"Fungal infection (ringworm/athlete's foot)", al:["fungal","ringworm","daad","dad khaj","athlete's foot","jock itch","itching groin","fungal infection","ring shaped","ring-shaped patch","scaly patch","itchy patch groin","spreading at the edge","ringworm patch"],
  sys:"skin", doctor:"Dermatologist",
  modern:[
   {t:"Clotrimazole or terbinafine cream: apply thin layer twice daily covering 2 cm BEYOND the ring edge; continue 2 WEEKS AFTER it looks cleared (total 3–4 weeks) — stopping early = relapse."},
@@ -1158,7 +1191,7 @@ conds: [
  tests:[], seeDoc:["Not improving in 2–3 days","Recurring allergy (drops that prevent exist)","Any discharge in a newborn — same day"],
  emerg:["Eye PAIN (not just irritation), vision blur/loss, halos around lights, severe headache+vomiting","Chemical splash → wash 20 min & go","Injury/foreign body embedded"]},
 
-{id:"toothache", rg:"head", nm:"Toothache", al:["toothache","daant dard","tooth pain","dant","cavity pain","wisdom tooth"],
+{id:"toothache", rg:"head", nm:"Toothache", al:["toothache","daant dard","tooth pain","dant","cavity pain","wisdom tooth","tooth hurts","tooth pain with cold","throbs at night tooth","lower tooth hurts","dant dard","tooth on the lower","hurts with cold water","throbs at night"],
  sys:"dental", doctor:"Dentist",
  modern:[
   {t:"Ibuprofen 400 mg after food (best for dental pain) ± paracetamol 650 mg in-between if severe (don't exceed either's max).", f:"nsaid"},
@@ -1260,7 +1293,7 @@ conds: [
  emerg:["Sudden severe weakness one side of body","Fainting spells","Breathlessness at rest"]},
 
 {id:"anaemia", rg:"systemic", nm:"Iron-deficiency anaemia (low haemoglobin)",
- al:["anaemia","anemia","low haemoglobin","low hemoglobin","low hb","khoon ki kami","pale","paleness","weakness and pale","iron deficiency"],
+ al:["anaemia","anemia","low haemoglobin","low hemoglobin","low hb","khoon ki kami","pale","paleness","weakness and pale","iron deficiency","pale and tired","lips look pale","palms look pale","breathless climbing stairs","tired for months"],
  sys:"blood", doctor:"General physician (gynaecologist if heavy periods, gastroenterologist if bleeding suspected)",
  dq:[{q:"Are your periods heavy — soaking through protection, clots, or lasting over 7 days?",opts:["Yes, heavy","Normal or not applicable"]},
      {q:"Any black or bloody stools, or long-term painkiller use?",opts:["Yes","No"]}],
@@ -1285,7 +1318,7 @@ conds: [
  emerg:["Breathless at rest, or chest pain","Racing heart while sitting still","Fainting, or unable to stand without collapsing","Very pale with black tarry stools"]},
 
 {id:"dizziness", rg:"head", nm:"Dizziness / vertigo (BPPV type)",
- al:["dizzy","dizziness","vertigo","spinning","chakkar","head spinning","room spinning","light headed","balance problem","giddiness"],
+ al:["dizzy","dizziness","vertigo","spinning","chakkar","head spinning","room spinning","light headed","balance problem","giddiness","room spins","spins when i roll over","spinning when i turn","dizzy turning over","room spins for","spins for 20 seconds","roll over in bed"],
  sys:"neuro", doctor:"ENT specialist or physician (neurologist if warning signs)",
  dq:[{q:"Does the spinning start when you turn over in bed or tilt your head, lasting under a minute?",opts:["Yes — brought on by movement","No — it is constant"]},
      {q:"Any deafness, ringing, double vision, slurred speech or weakness?",opts:["Yes","No"]}],
@@ -1308,7 +1341,7 @@ conds: [
   "Unable to walk or sit unsupported","Chest pain, palpitations or fainting with it"]},
 
 {id:"eczema", rg:"skin", nm:"Eczema / atopic dermatitis",
- al:["eczema","atopic dermatitis","dry itchy skin","khujli","dry patches","itchy patches","skin dryness"],
+ al:["eczema","atopic dermatitis","dry itchy skin","khujli","dry patches","itchy patches","skin dryness","itchy dry patches","dry inflamed patches","elbow creases","keeps coming back itchy"],
  sys:"skin", doctor:"Dermatologist",
  modern:[
   {t:"Eczema is dry, over-reactive skin rather than an infection. Nearly all of the benefit comes from restoring the barrier — moisturiser is the treatment, not a supportive extra."},
@@ -1329,7 +1362,7 @@ conds: [
  emerg:["Fever with rapidly spreading redness and pain","Painful blistering rash spreading fast (possible eczema herpeticum)","Facial or lip swelling with breathing difficulty"]},
 
 {id:"worms", rg:"abdomen", nm:"Intestinal worms",
- al:["worms","worm infection","pinworm","threadworm","roundworm","pet me keede","keede","anal itching at night","kirmi"],
+ al:["worms","worm infection","pinworm","threadworm","roundworm","pet me keede","keede","anal itching at night","kirmi","worm in the stool","itching around my anus","anal itching","saw a worm"],
  sys:"gi", doctor:"General physician / paediatrician",
  modern:[
   {t:"Itching around the anus at night, worms seen in stool, or a child with poor appetite and vague tummy pain — worm infestation is very common in India and easily treated."},
@@ -1348,7 +1381,7 @@ conds: [
  emerg:["Severe abdominal pain with vomiting and no passage of gas or stool (obstruction)","Yellowing of the eyes with abdominal pain"]},
 
 {id:"sciatica", rg:"back", nm:"Sciatica (nerve pain down the leg)",
- al:["sciatica","nerve pain leg","pain down my leg","shooting pain leg","slip disc","disc pain","pinched nerve","leg me current"],
+ al:["sciatica","nerve pain leg","pain down my leg","shooting pain leg","slip disc","disc pain","pinched nerve","leg me current","shooting down my leg","pain below the knee","down my leg since lifting","leg pain from back"],
  sys:"musculo", doctor:"Orthopaedician / physiotherapist",
  dq:[{q:"Any numbness in the saddle area, or difficulty controlling urine or stool?",opts:["Yes","No"]},
      {q:"Is the leg becoming weak — foot dragging or difficulty on stairs?",opts:["Yes","No"]}],
@@ -1373,7 +1406,7 @@ conds: [
   "Both legs becoming weak","Fever with the back pain"]},
 
 {id:"gout", rg:"limb", nm:"Gout (acute attack)",
- al:["gout","uric acid pain","big toe pain","joint red hot swollen","gout attack","vaat","high uric acid"],
+ al:["gout","uric acid pain","big toe pain","joint red hot swollen","gout attack","vaat","high uric acid","big toe red hot","toe swollen overnight","sudden toe pain","red hot swollen toe","big toe overnight","pain in my big toe","toe red hot swollen"],
  sys:"musculo", doctor:"Physician / rheumatologist",
  dq:[{q:"Is this your first ever attack, or do you have a fever with it?",opts:["First attack or fever present","Had it before, no fever"]}],
  modern:[
@@ -1441,7 +1474,7 @@ conds: [
  emerg:["Heavy bleeding soaking more than one pad an hour with dizziness","Severe one-sided pelvic pain with vomiting (possible ovarian torsion)","Sudden severe pelvic pain with a positive pregnancy test"]},
 
 {id:"pneumonia", rg:"chest", nm:"Pneumonia (chest infection)", refer:true,
- al:["pneumonia","chest infection","lung infection","nimonia"],
+ al:["pneumonia","chest infection","lung infection","nimonia","fever with cough and breathless","sharp pain when i breathe in","breathless with fever","cough and breathless"],
  sys:"resp", doctor:"General physician — same day",
  modern:[
   {t:"Fever with cough and breathlessness, especially with one-sided chest pain worse on breathing in, suggests pneumonia rather than a simple chest cold."},
@@ -1456,7 +1489,7 @@ conds: [
  emerg:["Breathless at rest or unable to speak full sentences","Blue lips, confusion or drowsiness","Chest pain with collapse","Oxygen saturation below 94% if you have a pulse oximeter"]},
 
 {id:"asthma", rg:"chest", nm:"Asthma / wheezing illness", refer:true,
- al:["asthma","wheezing","wheeze","dama","inhaler","breathing difficulty at night"],
+ al:["asthma","wheezing","wheeze","dama","inhaler","breathing difficulty at night","wheezing at night","worse in dust","breathless at night","borrowed inhaler","wheezing and breathless"],
  sys:"resp", doctor:"Physician / pulmonologist",
  modern:[
   {t:"Wheeze and breathlessness that come and go — worse at night, with exercise, cold air or dust — suggest asthma. It is very manageable, but it needs a proper diagnosis and a prescribed inhaler."},
@@ -1489,7 +1522,7 @@ conds: [
  emerg:["Breathless at rest or confused","Blue lips","Unable to complete a sentence","Drowsiness with laboured breathing"]},
 
 {id:"tb", rg:"chest", nm:"Tuberculosis (suspected)", refer:true,
- al:["tb","tuberculosis","cough for weeks","chronic cough","night sweats","coughing blood","tapedik"],
+ al:["tb","tuberculosis","cough for weeks","chronic cough","night sweats","coughing blood","tapedik","cough for three weeks","cough three weeks","cough 3 weeks","weight loss and night sweats","blood in the sputum","blood in sputum"],
  sys:"resp", doctor:"DOTS centre / chest physician — free under India's national programme",
  modern:[
   {t:"Any cough lasting more than 2 weeks in India should be tested for TB — especially with weight loss, evening fever, night sweats, or blood in the sputum."},
@@ -1537,7 +1570,7 @@ conds: [
  emerg:["Confusion, drowsiness or fits","Yellow eyes, or very dark urine","Breathlessness","Unable to keep fluids down","Passing little or no urine"]},
 
 {id:"typhoid", rg:"systemic", nm:"Typhoid / enteric fever (suspected)", refer:true,
- al:["typhoid","enteric fever","motijhara","widal"],
+ al:["typhoid","enteric fever","motijhara","widal","fever climbing every day","fever rising daily","fever for five days","stepwise fever","fever every day for","fever climbing","climbing every day","no appetite stomach"],
  sys:"infection", doctor:"Physician — with blood culture",
  modern:[
   {t:"Fever climbing steadily over several days with headache, abdominal discomfort and poor appetite suggests enteric fever. Blood culture is the proper test; the Widal test alone is unreliable and is over-used."},
@@ -1570,7 +1603,7 @@ conds: [
  emerg:["Oxygen saturation below 94%","Breathless at rest, or blue lips","Chest pain or pressure","Confusion or difficulty waking"]},
 
 {id:"ulcer_peptic", rg:"abdomen", nm:"Peptic ulcer (suspected)", refer:true,
- al:["peptic ulcer","stomach ulcer","gastric ulcer","duodenal ulcer","h pylori","ulcer in stomach"],
+ al:["peptic ulcer","stomach ulcer","gastric ulcer","duodenal ulcer","h pylori","ulcer in stomach","pain waking me at night","upper belly pain at night","diclofenac for months","painkillers for months","belly pain waking me"],
  sys:"gi", doctor:"Gastroenterologist / physician",
  modern:[
   {t:"Upper abdominal pain that wakes you at night, or is clearly related to meals, with a history of painkiller use — suggests an ulcer rather than simple acidity."},
@@ -1603,7 +1636,7 @@ conds: [
   "Abdomen becoming swollen, hard and very painful while the diarrhoea stops","Confusion or extreme drowsiness","Heavy visible bleeding"]},
 
 {id:"gallstones", rg:"abdomen", nm:"Gallstones / biliary colic", refer:true,
- al:["gallstone","gall bladder","gallbladder","pitt ki pathri","stone in gallbladder","pain after fatty food"],
+ al:["gallstone","gall bladder","gallbladder","pitt ki pathri","stone in gallbladder","pain after fatty food","right upper belly pain","radiating to my shoulder blade","after fatty food"],
  sys:"gi", doctor:"Surgeon (general surgery) after ultrasound",
  modern:[
   {t:"Severe episodic pain in the right upper abdomen, often after fatty food, sometimes radiating to the right shoulder blade — this is typical biliary colic. An ultrasound confirms it."},
@@ -1619,7 +1652,7 @@ conds: [
   "Severe pain going through to the back with vomiting — possible pancreatitis","Pain lasting over 6 hours","Yellowing of skin or eyes with dark urine"]},
 
 {id:"ra", rg:"limb", nm:"Inflammatory arthritis (suspected RA)", refer:true,
- al:["rheumatoid","rheumatoid arthritis","joint swelling many","morning stiffness","gathiya","small joints swollen"],
+ al:["rheumatoid","rheumatoid arthritis","joint swelling many","morning stiffness","gathiya","small joints swollen","both hands stiff","stiff for an hour","eases as i move","morning stiffness over an hour","joints swollen and stiff"],
  sys:"musculo", doctor:"Rheumatologist",
  modern:[
   {t:"Several joints painful and swollen symmetrically — hands, wrists, feet — with morning stiffness lasting over an hour that eases with movement, points to inflammatory arthritis rather than wear-and-tear."},
@@ -1635,7 +1668,7 @@ conds: [
  emerg:["A single hot swollen joint with fever — infection must be excluded urgently","Chest pain or breathlessness","New numbness or weakness in the limbs"]},
 
 {id:"thyroid", rg:"systemic", nm:"Thyroid disorder (suspected)", refer:true,
- al:["thyroid","hypothyroid","hyperthyroid","tsh","thyroid problem","weight gain hair fall","neck swelling"],
+ al:["thyroid","hypothyroid","hyperthyroid","tsh","thyroid problem","weight gain hair fall","neck swelling","hair fall and weight gain","feeling cold all the time","cold all the time","weight gain and tired","fatigue hair fall"],
  sys:"endocrine", doctor:"Physician / endocrinologist",
  modern:[
   {t:"Fatigue with weight change, hair fall, cold or heat intolerance, constipation or loose stools, and menstrual changes — these point to thyroid dysfunction. A simple TSH blood test answers it."},
@@ -1653,7 +1686,7 @@ conds: [
   "Rapidly enlarging neck swelling with difficulty breathing or swallowing"]},
 
 {id:"depression", rg:"systemic", nm:"Depression / low mood", refer:true,
- al:["depression","depressed","low mood","no interest","hopeless","udaasi","mann nahi lagta","feeling worthless"],
+ al:["depression","depressed","low mood","no interest","hopeless","udaasi","mann nahi lagta","feeling worthless","no interest in anything","low mood for a month","nothing feels worth","no interest in things"],
  sys:"mental", doctor:"Psychiatrist or a physician you trust — both can help",
  modern:[
   {t:"Persistent low mood or loss of interest in things you used to enjoy, most of the day for two weeks or more, is depression. It is a medical condition, not weakness — and it responds well to treatment."},
