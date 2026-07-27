@@ -2,7 +2,7 @@
 "use strict";
 /* Keep in step with the ?v= token on the script tags in index.html. Shown in the
    footer, so a cached old build is visible instead of silently giving old advice. */
-const BUILD = 21;
+const BUILD = 22;
 window.DOCTO_BUILD = BUILD;
 const CONFIG = {
   GOOGLE_CLIENT_ID: (window.DOCTO_CONFIG && window.DOCTO_CONFIG.GOOGLE_CLIENT_ID) || "", // set this in config.js
@@ -1212,6 +1212,31 @@ function logGap(name, complaint){
     localStorage.setItem(key, JSON.stringify(log.slice(0,200)));
   }catch(e){ /* storage full or blocked — losing a log entry must never break a consultation */ }
 }
+
+/* Every time the plausibility gate rejects a flag the reader named, record it.
+   The gate was built from one bad screenshot; this turns that anecdote into
+   evidence. If a flag is rejected constantly, either the reader is unreliable
+   about it or OUR rule for it is too narrow — the log distinguishes those, and
+   both are worth knowing before anyone adds more machinery on a hunch.
+   Read with rejectReport() in the console. */
+function logReject(flag, complaint){
+  try{
+    const key="docto_rejects";
+    const log=JSON.parse(localStorage.getItem(key)||"[]");
+    const hit=log.find(r=>r.flag===flag);
+    const today=new Date().toISOString().slice(0,10);
+    if(hit){ hit.n++; hit.last=today; if(hit.samples.length<3) hit.samples.push(String(complaint||"").slice(0,140)); }
+    else log.push({flag, n:1, first:today, last:today, samples:[String(complaint||"").slice(0,140)]});
+    localStorage.setItem(key, JSON.stringify(log.slice(0,100)));
+  }catch(e){ /* never break a consultation to write a log */ }
+}
+function rejectReport(){
+  try{
+    const log=JSON.parse(localStorage.getItem("docto_rejects")||"[]").sort((a,b)=>b.n-a.n);
+    if(!log.length) return "No implausible flags rejected yet.";
+    return log.map(r=>r.n+"x  "+r.flag+"   ("+r.first+" to "+r.last+")\n     "+r.samples.join("\n     ")).join("\n\n");
+  }catch(e){ return "unreadable"; }
+}
 /* Paste in the console to see what the catalogue is missing, most frequent first. */
 function gapReport(){
   const log=JSON.parse(localStorage.getItem("docto_gaps")||"[]");
@@ -1370,7 +1395,9 @@ async function flow(input){
         /* Reject a flag whose defining trigger is nowhere in the complaint. The
            person still gets escalated — just without invented specifics. */
         let implausible=null;
-        if(readerFlag && !flagPlausible(readerFlag, lowIn)){ implausible=readerFlag; readerFlag=null; }
+        if(readerFlag && !flagPlausible(readerFlag, lowIn)){
+          implausible=readerFlag; logReject(readerFlag, input); readerFlag=null;
+        }
         const finalFlag  = readerFlag || ruleFlag;
         if(finalFlag){
           S.flagSource = readerFlag ? (ruleFlag && ruleFlag!==readerFlag ? "reader-relabelled" : "reader")
