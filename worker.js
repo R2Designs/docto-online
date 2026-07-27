@@ -23,7 +23,7 @@ const ALLOWED_ORIGINS = [
   "https://r2designs.github.io",
   "http://localhost:8000"
 ];
-const VERSION = "v10";
+const VERSION = "v12";
 // Claude reads messy clinical prose best, so it leads when a key is present.
 const CLAUDE_MODELS = ["claude-haiku-4-5-20251001"];
 // Workers AI models, tried in order. Cloudflare retires model names periodically
@@ -94,8 +94,8 @@ export default {
       if (!text || typeof text !== "string" || text.length > 1500)
         return new Response(JSON.stringify({ error: "bad input" }), { status: 400, headers: cors });
 
-      const condList = Array.isArray(conds) ? conds.slice(0, 60).join("; ") : "";
-      const flagList = Array.isArray(flags) ? flags.slice(0, 30).join(", ") : "";
+      const condList = Array.isArray(conds) ? conds.slice(0, 100).join("; ") : "";
+      const flagList = Array.isArray(flags) ? flags.slice(0, 60).join(", ") : "";
       const areaList = Array.isArray(areas) ? areas.slice(0, 20).join(", ") : "";
       const extract  = mode === "extract";
 
@@ -106,13 +106,14 @@ export default {
            it reports what was said; it never decides treatment. */
       const system = extract ?
 `Clinical intake READER. Extract only what the patient stated. No advice, no invention.
-conds: ${condList}
+conds (id=name, with patient-wording cues in brackets): ${condList}
 flags: ${flagList}
 areas: ${areaList}
 
-Reply ONLY: {"id","red_flag","emergency","emergency_reason","duration","severity","temp_f","pain_areas","symptoms","onset","summary"}
+Reply ONLY: {"id","red_flag","emergency","emergency_reason","suggested","duration","severity","temp_f","pain_areas","symptoms","onset","summary"}
 - emergency: true if this needs hospital assessment now, else false. Judge this INDEPENDENTLY — set it true even when no flag id fits.
 - emergency_reason: if emergency is true, one short clause naming what you suspect and why, e.g. "fever with a heart murmur and splinter haemorrhages suggests endocarditis". Empty otherwise. Name the concern only; give no treatment advice.
+- suggested: ONLY when id is "none" — the condition you would actually name, in 1-4 plain words (e.g. "trigger finger", "lipoma", "onychomycosis"). This is used to decide what to add to the app\'s database later. Empty if id is set or you genuinely cannot say. Never suggest a treatment here, only a name.
 - id/red_flag: best match from the lists, else "none". Judge the DESCRIPTION, not the patient's own conclusion — "is this just a migraine?" is not reassurance. Weigh patterns and numbers: navel pain migrating to right lower abdomen + nausea + low fever = appendicitis; BP >=180/120 = hypertensive emergency; MAOI drug + aged cheese/wine/cured meat + pounding headache = tyramine crisis; SSRI+tramadol/triptan + tremor/sweats/fever = serotonin syndrome; saddle numbness + bladder change = cauda equina; Graves + fever + HR>130 = thyroid storm.
 - duration: today (<24h) | days | week | weeks | none
 - severity: 1-10 only if stated/clearly implied, else null
@@ -258,6 +259,11 @@ Rules:
            reason through so the app can say WHY, while the safety instructions
            still come from our own vetted text. */
         out.emergency  = parsed.emergency === true || parsed.emergency === "true";
+        /* Names a condition we have no entry for. Not shown as advice — logged so
+           an entry can be written, reviewed and added, after which it becomes an
+           ordinary database lookup like everything else. */
+        out.suggested  = (!out.id && typeof parsed.suggested === "string")
+          ? parsed.suggested.replace(/[^a-z0-9 \-\/]/gi,"").trim().slice(0,60) || null : null;
         out.emergency_reason = typeof parsed.emergency_reason === "string"
           ? parsed.emergency_reason.slice(0, 240) : null;
       }

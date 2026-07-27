@@ -263,7 +263,7 @@ function keywordFlag(text){
     if(wall && ["cardiac","pneumothorax","aortic_dissection"].includes(rf.id)) continue;
     for(const k of rf.k){ if(low.includes(k)){ if(!candidates.includes(rf.id)) candidates.push(rf.id); break; } }
   }
-  return candidates.length ? rankFlags(candidates) : null;
+  return candidates.length ? rankFlags(candidates, low) : null;
 }
 
 /* Read "30 M", "30, male", "45/F", "f 22", "28 साल पुरुष" etc. from one answer.
@@ -359,7 +359,48 @@ const FLAG_PRIORITY=[
   "subdural","rhabdo","sickle_crisis","co_poisoning","hemoptysis",
   "hematuria","seizure","unconscious","crisis","dehydration"
 ];
-function rankFlags(ids){
+/* A few alarms have an everyday explanation that is far commoner than the
+   emergency, and firing them anyway teaches people to ignore us. Each guard
+   names the benign reading AND the findings that would override it — the flag
+   is only dropped when the innocent explanation is stated and not one of the
+   danger signs is. Guards apply to the reader's flag as well as the rules',
+   because the model over-calls the same three. */
+const FLAG_GUARDS={
+  // black stool on iron tablets or bismuth is expected and harmless
+  gi_bleed:{
+    benign:["iron tablet","iron tablets","iron supplement","iron pill","ferrous","fefol","orofer","livogen","iron syrup",
+            "bismuth","pepto","started iron","taking iron","on iron","beetroot","black liquorice","charcoal"],
+    danger:["blood","bloody","vomit","fresh red","clot","dizzy","dizziness","faint","lightheaded","collapse",
+            "weak","weakness","pale","severe pain","racing heart","breathless","tarry and","large amount"]
+  },
+  // anaemia is only an emergency once the heart stops keeping up
+  severe_anemia:{
+    benign:[""],                                   // always evaluated: needs positive evidence
+    danger:["at rest","resting","breathless at rest","short of breath at rest","chest pain","faint","fainted",
+            "fainting","collapse","collapsed","cannot stand","can't stand","unable to stand","racing heart",
+            "heart racing","palpitation","pounding heart","toddler","infant","baby","months old","gums are white",
+            "lips are white","ghostly","hb 5","hb 6","hb of 5","hb of 6","black tarry","bleeding heavily",
+            "confused","drowsy"]
+  },
+  // "short of breath" said calmly in a paragraph is not "severe difficulty breathing"
+  breathing:{
+    benign:[""],
+    danger:["at rest","can't breathe","cannot breathe","can't speak","cannot speak","unable to speak","full sentence",
+            "gasping","gasp","blue lips","lips are blue","struggling to breathe","fighting for breath","suffocating",
+            "saans nahi","dam ghut","severe","severely","badly","worst","desperate","sitting up to breathe",
+            "cannot lie flat","spo2","oxygen","o2 sat","drowning"]
+  }
+};
+function guardDrops(id, low){
+  const g=FLAG_GUARDS[id]; if(!g) return false;
+  const has=list=>list.some(w=>w && low.includes(w));
+  if(has(g.danger)) return false;                  // a danger sign always wins
+  return g.benign.length===1 && g.benign[0]==="" ? true : has(g.benign);
+}
+function rankFlags(ids, low){
+  const src=(low!==undefined && low!==null) ? String(low) : "";
+  const kept=ids.filter(id=>!guardDrops(id, src));
+  ids = kept.length ? kept : [];
   let best=null, bestRank=Infinity;
   for(const id of ids){
     const r=FLAG_PRIORITY.indexOf(id);
@@ -835,7 +876,11 @@ async function flow(input){
         /* Reconciliation. The reader may only ever escalate or re-label — it
            cannot cancel a rule alarm, because if the model is unavailable or
            mistaken the floor must still hold. */
-        const readerFlag = (ex.red_flag && DB.emergencyAdvice[ex.red_flag]) ? ex.red_flag : null;
+        const lowIn = scrubNegations(" "+String(input).toLowerCase()+" ");
+        let readerFlag = (ex.red_flag && DB.emergencyAdvice[ex.red_flag]) ? ex.red_flag : null;
+        // the model over-calls the same handful of alarms; the same guards apply to it
+        let guarded=false;
+        if(readerFlag && guardDrops(readerFlag, lowIn)){ readerFlag=null; guarded=true; }
         const finalFlag  = readerFlag || ruleFlag;
         if(finalFlag){
           S.flagSource = readerFlag ? (ruleFlag && ruleFlag!==readerFlag ? "reader-relabelled" : "reader")
@@ -845,7 +890,12 @@ async function flow(input){
         }
         /* The long tail: a real emergency we hold no specific entry for. We still
            stop — using our own safety instructions, quoting only the reason. */
-        if(ex.emergency){ await emergencyStop("unspecified", ex.emergency_reason); return; }
+        /* If a guard just removed the flag, the same reasoning removes the blanket
+           "emergency" that came with it — but only when we can hand the person a
+           real condition instead. With nothing to route to, we still stop. */
+        if(ex.emergency && !(guarded && ex.id && DB.conds.find(c=>c.id===ex.id))){
+          await emergencyStop("unspecified", ex.emergency_reason); return;
+        }
         if(ex.id){ const c2=DB.conds.find(c=>c.id===ex.id); if(c2){ S.llmHint=c2.id; } }
         /* Capture what we could not name. The user still gets the honest fallback;
            this only records the gap so the catalogue can grow deliberately. */
