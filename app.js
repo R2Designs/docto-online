@@ -232,8 +232,11 @@ function scrubNegations(low){
 const AREA_REGION={ head:"head", eyes:"head", ear:"head", teeth:"head", throat:"head",
   chest:"chest", upabd:"abdomen", lowabd:"abdomen", urinary:"pelvis",
   back:"back", joints:"limb", muscles:"limb", skin:"skin" };
-const REGION_NEIGHBOURS={ head:["neck"], neck:["head","back"], chest:[], abdomen:["pelvis"],
-  pelvis:["abdomen"], back:["neck"], limb:[], skin:[] };
+/* The airway is one continuous organ: a cold in the nose and a cough in the chest
+   are the same illness moving. Treating head and chest as strangers made the guard
+   delete the only evidence we had for the commonest complaint there is. */
+const REGION_NEIGHBOURS={ head:["neck","chest"], neck:["head","back","chest"], chest:["neck","head"],
+  abdomen:["pelvis"], pelvis:["abdomen"], back:["neck"], limb:[], skin:[] };
 function complaintRegion(){
   if(!S || !S.pains || !S.pains.length) return null;
   const regs=[...new Set(S.pains.map(p=>AREA_REGION[p]).filter(Boolean))];
@@ -250,6 +253,29 @@ function chestWallPattern(low){
     || /\b(press|pressing|push) (?:on )?my (?:ribs?|chest|sternum|breastbone)\b/.test(low);
   const systemic=/\b(short of breath|breathless|gasping|blue lips|sweating|clammy|radiat|to my jaw|to my arm|faint|collaps|dizzy|palpitation|cough(?:ing)? blood|tracheal)\b/.test(low);
   return reproducible && !systemic;
+}
+/* A cold that has outstayed its welcome is not a cold. The two discriminators
+   doctors actually use are DURATION (symptoms past ~10 days without improving,
+   or worsening after an initial improvement) and ONE-SIDEDNESS — a viral cold is
+   symmetrical, a blocked sinus usually is not. Neither was encoded, so a textbook
+   sinusitis narrative scored zero on sinusitis and won on "common cold", whose
+   plan says it clears in 3-5 days. That is the wrong plan, not just the wrong label. */
+function sinusPattern(low, dur){
+  const coldSx=/\b(cold|runny nose|blocked nose|nose (?:is |has been )?(?:completely )?blocked|stuffy|sneez|congest|nasal)\b/.test(low);
+  if(!coldSx) return null;
+  let days=0;
+  const m=/\b(\d{1,2})\s*(?:\+)?\s*(day|days|din)\b/.exec(low);
+  if(m) days=+m[1];
+  if(/\b(two|three|four|2|3|4)\s*weeks?\b/.test(low)) days=Math.max(days,14);
+  else if(/\b(a |one )?week\b/.test(low)) days=Math.max(days,7);
+  if(dur==="weeks") days=Math.max(days,14);
+  else if(dur==="week") days=Math.max(days,7);
+  const lingering = days>=7 || /\b(not going away|hasn'?t gone|still not better|getting worse|worse again|since (?:more than )?a week)\b/.test(low);
+  const unilateral = /\b(one side|left side|right side|one nostril|left nostril|right nostril|especially the left|especially the right|only on the left|only on the right)\b/.test(low);
+  const purulent = /\b(yellow|green|thick)\b[^.]{0,20}\b(mucus|discharge|phlegm|snot)\b/.test(low)
+                || /\b(pain|pressure|heavy|heaviness)\b[^.]{0,20}\b(face|cheek|forehead|behind (?:my )?eyes?)\b/.test(low);
+  if(!lingering && !unilateral && !purulent) return null;
+  return {lingering, unilateral, purulent, days};
 }
 function keywordFlag(text){
   const low=scrubNegations(" "+text.toLowerCase()+" ");
@@ -478,6 +504,12 @@ function scoreConditions(){
     sc.costochondritis=(sc.costochondritis||0)+8;
     sc.sprain=Math.max(0,(sc.sprain||0)-4);
   }
+  /* Duration and one-sidedness separate sinusitis from the cold it started as. */
+  const sn=sinusPattern(" "+text+" ", S.dur);
+  if(sn){
+    sc.sinusitis=(sc.sinusitis||0)+(sn.lingering?5:0)+(sn.unilateral?4:0)+(sn.purulent?3:0);
+    if(sn.lingering) sc.cold=Math.max(0,(sc.cold||0)-4);   // it has stopped being a simple cold
+  }
   // the narrative reader's opinion counts, but doesn't override a strong keyword match
   if(S.llmHint) sc[S.llmHint]=(sc[S.llmHint]||0)+3;
   S.scores=sc;
@@ -511,9 +543,25 @@ function scoreConditions(){
   S.fit=bs;
   return DB.conds.find(c=>c.id===best);
 }
-function confidence(){ const vals=Object.values(S.scores).sort((a,b)=>b-a);
-  const top=vals[0]||0, second=vals[1]||0;
-  if(top>=6 && top-second>=3) return "High"; if(top>=3) return "Moderate"; return "Preliminary"; }
+/* Confidence must describe the answer we actually gave, not the keyword spread.
+   Printing "General health concern — Confidence: High" is a contradiction, and
+   scoring a condition the reader named by how well a DIFFERENT condition's
+   keywords matched is meaningless. Both were possible before. */
+function confidence(){
+  const id=S.cond && S.cond.id;
+  if(!id || id==="generic") return "Preliminary";     // we said we don't know; that is not confidence
+  const sc=S.scores||{};
+  const vals=Object.values(sc).sort((a,b)=>b-a);
+  const mine=sc[id]||0, second=vals.find(v=>v!==mine) ?? 0;
+  if(S.llmHint===id){
+    // reader and keywords agree, and nothing else scores near it
+    if(mine>=6 && mine-second>=3) return "High";
+    return "Moderate";                                // reader alone is a real answer, not a strong one
+  }
+  if(mine>=6 && mine-second>=3) return "High";
+  if(mine>=3) return "Moderate";
+  return "Preliminary";
+}
 
 /* ---------------- personalisation filters ---------------- */
 function medAllowed(item){

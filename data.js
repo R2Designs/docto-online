@@ -838,7 +838,7 @@ conds: [
  seeDoc:["Fever lasting more than 3 days","Temperature ≥103°F not settling with paracetamol","Fever with burning urine, ear pain, severe throat pain (needs source check)","Any fever in infants, elderly, pregnancy, diabetes"],
  emerg:["Stiff neck, rash that doesn't fade on pressure, confusion or fits","Breathlessness or chest pain","Signs of dehydration (very little urine, drowsiness)"]},
 
-{id:"cold", rg:"chest", nm:"Common cold", al:["cold","runny nose","blocked nose","sneezing","jukam","zukam","nazla","coryza"],
+{id:"cold", rg:"head", nm:"Common cold", al:["cold","runny nose","blocked nose","sneezing","jukam","zukam","nazla","coryza"],
  sys:"resp", doctor:"General physician / ENT",
  dq:[{q:"What's the mucus like?",opts:["Clear & watery","Thick yellow/green","Mostly blocked, little mucus"]}],
  modern:[
@@ -903,7 +903,12 @@ conds: [
  seeDoc:["High-risk person (get antiviral early)","Fever >3 days","Improving then suddenly worse (secondary infection)"],
  emerg:["Breathlessness, chest pain, confusion, blue lips","Not passing urine (dehydration)"]},
 
-{id:"sinusitis", rg:"head", nm:"Sinusitis", al:["sinus","sinusitis","facial pressure","heavy head cold","cheek pain nose"],
+{id:"sinusitis", rg:"head", nm:"Sinusitis", al:["sinus","sinusitis","facial pressure","heavy head cold","cheek pain nose",
+  "nose blocked","nose is blocked","blocked nose","stuffy nose","nasal blockage","nose completely blocked",
+  "one side blocked","one nostril blocked","left side blocked","right side blocked","sinus pressure",
+  "pressure in my face","heaviness in the face","face feels heavy","pain over my cheeks","forehead pain",
+  "post nasal drip","thick yellow mucus","green mucus","yellow discharge from nose","naak band","nak band",
+  "sar bhaari","cold not going away","cold for two weeks"],
  sys:"resp", doctor:"ENT",
  modern:[
   {t:"Steam inhalation 3×/day + saline nasal rinse — mainstay."},
@@ -914,7 +919,7 @@ conds: [
  tests:[], seeDoc:["Symptoms >10 days or getting worse","High fever with severe one-sided face pain","Recurrent sinusitis (ENT for scan)"],
  emerg:["Swelling/redness around an eye, vision change, severe headache with vomiting"]},
 
-{id:"hayfever", rg:"chest", nm:"Allergy / hay fever", al:["allergy","hay fever","dust allergy","pollen","allergic rhinitis","sneezing morning","itchy eyes nose"],
+{id:"hayfever", rg:"head", nm:"Allergy / hay fever", al:["allergy","hay fever","dust allergy","pollen","allergic rhinitis","sneezing morning","itchy eyes nose"],
  sys:"resp", doctor:"ENT / Allergist",
  modern:[
   {t:"Cetirizine 10 mg or loratadine 10 mg once daily (loratadine = non-drowsy).", f:""},
