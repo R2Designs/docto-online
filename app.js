@@ -1,5 +1,9 @@
 /* DOCTO ONLINE — chat engine. Runs fully in the browser; data stays in localStorage. */
 "use strict";
+/* Keep in step with the ?v= token on the script tags in index.html. Shown in the
+   footer, so a cached old build is visible instead of silently giving old advice. */
+const BUILD = 13;
+window.DOCTO_BUILD = BUILD;
 const CONFIG = {
   GOOGLE_CLIENT_ID: (window.DOCTO_CONFIG && window.DOCTO_CONFIG.GOOGLE_CLIENT_ID) || "", // set this in config.js
   LLM_ENDPOINT: (window.DOCTO_CONFIG && window.DOCTO_CONFIG.LLM_ENDPOINT) || "",
@@ -1268,7 +1272,10 @@ function applyLang(){
   $("pageTitle").textContent=t("consultTitle");
   { const ps=$("pageSub"); if(ps) ps.textContent=t("pageSub"); }
   $("inp").placeholder=t("inputPh"); $("attach").title=t("attachTip");
-  $("micro").textContent=t("disclaimer");
+  /* Stamp the build in the UI. A stale cached app.js runs old clinical logic
+     silently — this makes "which version am I actually looking at?" a glance
+     rather than an investigation. */
+  $("micro").textContent=t("disclaimer")+"  ·  build "+BUILD;
   $("lg1").textContent=t("appName"); $("lg2").textContent=t("appName2");
   renderHistory();
 }
