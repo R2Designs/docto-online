@@ -2,7 +2,7 @@
 "use strict";
 /* Keep in step with the ?v= token on the script tags in index.html. Shown in the
    footer, so a cached old build is visible instead of silently giving old advice. */
-const BUILD = 16;
+const BUILD = 17;
 window.DOCTO_BUILD = BUILD;
 const CONFIG = {
   GOOGLE_CLIENT_ID: (window.DOCTO_CONFIG && window.DOCTO_CONFIG.GOOGLE_CLIENT_ID) || "", // set this in config.js
@@ -295,6 +295,8 @@ function keywordFlag(text){
   /* Gather every candidate — patterns, quoted vital signs, plain keywords — then
      let clinical precedence decide, rather than whichever rule happened to run first. */
   let candidates=patternFlags(low);
+  // a hallmark sign decides the answer on its own — that is what makes it a hallmark
+  (DB.hallmarks||[]).forEach(h=>{ if(h.flag && h.sign.test(low) && !candidates.includes(h.flag)) candidates.push(h.flag); });
   if(chestWallPattern(low)) candidates=candidates.filter(id=>!["cardiac","pneumothorax","aortic_dissection"].includes(id));
   const v=vitalsFlag(low); if(v && !candidates.includes(v)) candidates.push(v);
   const wall=chestWallPattern(low);
@@ -425,6 +427,35 @@ function patternFlag(low){
    satisfy several — pregnancy with a headache and visual disturbance matches both
    pre-eclampsia and retinal detachment — and picking by array position hands out
    confidently wrong advice. */
+/* How long has this been going on, in DAYS.
+   Duration is a number with a unit, but every rule so far compared it as a
+   string — which is why "hoarse for 6 weeks" missed a rule written for "more
+   than three weeks", and why "past 8 day" needed its own special case. Parsing
+   it once, centrally, lets rules state a real threshold (minDays) and removes
+   a whole class of misses instead of one at a time. */
+function parseDuration(text){
+  const low=" "+String(text||"").toLowerCase()+" ";
+  const W={day:1,days:1,din:1,week:7,weeks:7,wk:7,wks:7,hafte:7,hafta:7,
+           month:30,months:30,mahine:30,mahina:30,year:365,years:365,saal:365,varsh:365,
+           hour:1/24,hours:1/24,hrs:1/24,ghante:1/24,minute:1/1440,minutes:1/1440};
+  const WORD={a:1,an:1,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,
+              eleven:11,twelve:12,couple:2,few:3,several:4};
+  let best=null;
+  // "for 6 weeks", "since 3 days", "past 8 day", "more than a month", "2-3 hours"
+  const re=/\b(?:for|since|from|past|last|over)?\s*(?:more than|over|about|around|nearly|almost)?\s*(\d{1,3}|a|an|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|couple|few|several)\s*(?:-\s*\d{1,3}\s*)?(?:of\s+)?(day|days|din|week|weeks|wk|wks|hafte|hafta|month|months|mahine|mahina|year|years|saal|varsh|hour|hours|hrs|ghante|minute|minutes)\b/g;
+  let m;
+  while((m=re.exec(low))!==null){
+    const n = /^\d+$/.test(m[1]) ? +m[1] : (WORD[m[1]]||null);
+    if(n===null) continue;
+    const d = n*(W[m[2]]||0);
+    if(d>0 && (best===null || d>best)) best=d;   // longest stated span wins
+  }
+  if(best===null){
+    if(/\b(yesterday|last night|since morning|today|this morning)\b/.test(low)) best=1;
+    else if(/\b(chronic|for years|since childhood|long time|months now)\b/.test(low)) best=180;
+  }
+  return best;
+}
 function patternFlags(low){
   const hay = typeof low==="string" ? (low.startsWith(" ")?low:" "+low.toLowerCase()+" ") : "";
   const hits=[];
@@ -439,6 +470,9 @@ function patternFlags(low){
        rule — it only ever fails safe towards firing. */
     if(rule.minAge!==undefined && yrs!==null && yrs < rule.minAge) continue;
     if(rule.maxAge!==undefined && yrs!==null && yrs > rule.maxAge) continue;
+    /* Numeric duration thresholds. Unknown duration never blocks a rule. */
+    if(rule.minDays!==undefined){ const d=parseDuration(hay); if(d!==null && d < rule.minDays) continue; }
+    if(rule.maxDays!==undefined){ const d=parseDuration(hay); if(d!==null && d > rule.maxDays) continue; }
     /* A term starting with "~" is a regex. People pad their sentences —
        "hurts a bit to chew" is the same finding as "hurts to chew", and a
        substring list can never catch every filler word someone drops in. */
@@ -476,7 +510,12 @@ const FLAG_PRIORITY=[
   "temporal_arteritis","crao","glaucoma_acute","retinal_detach",
   "poison","tachy_severe",
   "subdural","rhabdo","sickle_crisis","co_poisoning","hemoptysis",
-  "hematuria","seizure","unconscious","crisis","dehydration"
+  "hematuria","seizure","unconscious","crisis","dehydration",
+  /* Time-windowed rather than life-threatening. They rank below the emergencies
+     but must still outrank the generic self-care entries that share their
+     vocabulary — a torn Achilles reads as an ankle sprain, a scaphoid fracture
+     as a wrist sprain, and both lose the window if we let the generic win. */
+  "quinsy","sudden_hearing_loss","achilles_rupture","scaphoid","haematuria_painless"
 ];
 /* A few alarms have an everyday explanation that is far commoner than the
    emergency, and firing them anyway teaches people to ignore us. Each guard
@@ -591,13 +630,19 @@ function scoreConditions(){
      Red flags have been negation-aware for a while; condition routing was not,
      so "no fever no back pain" scored `fever` and beat the actual complaint.
      People describing symptoms list denials constantly — this is not an edge case. */
-  const raw=S.complaint.toLowerCase();
+  const raw=S.complaint.toLowerCase().replace(/[‘’]/g,"'").replace(/[“”]/g,'"');
   const text=scrubNegations(" "+raw+" ").trim();
   const sc={};
   const toks=text.split(/[^a-z0-9]+/).filter(x=>x.length>=4);
+  /* Specificity, not just presence. "white spots on tonsils" and "fever" both
+     scored 3, so a four-sign strep picture tied with the single word every
+     febrile illness contains. A phrase a patient only says when they have THIS
+     condition is worth far more than a symptom shared by everything. */
+  const aliasWeight=a=>{ const w=a.trim().split(/\s+/).length;
+    return w>=4?9 : w===3?7 : w===2?5 : a.length>4?3:2; };
   DB.conds.forEach(c=>{ let s=0;
     c.al.forEach(a=>{
-      if(text.includes(a)) { s+=a.length>4?3:2; return; }
+      if(text.includes(a)) { s+=aliasWeight(a); return; }
       if(a.length>=5 && !a.includes(" ") && toks.some(tk=>editLe1(tk,a))) s+=2; // typo-tolerant ("hedache","khaansi")
     });
     sc[c.id]=s; });
@@ -623,6 +668,10 @@ function scoreConditions(){
     sc.costochondritis=(sc.costochondritis||0)+8;
     sc.sprain=Math.max(0,(sc.sprain||0)-4);
   }
+  /* A hallmark sign names the condition outright. Without this, a specific
+     injury with a specific management path collapses into whichever generic
+     entry shares the most words with it. */
+  (DB.hallmarks||[]).forEach(h=>{ if(h.cond && h.sign.test(text)) sc[h.cond]=(sc[h.cond]||0)+20; });
   /* The dangerous look-alike. Over 50, "temple headache + hurts to chew" is
      giant cell arteritis until an ESR/CRP says otherwise — and the jaw-joint
      plan (soft diet, night guard, wait it out) burns exactly the days in which
@@ -640,6 +689,16 @@ function scoreConditions(){
     sc.sinusitis=(sc.sinusitis||0)+(sn.lingering?5:0)+(sn.unilateral?4:0)+(sn.purulent?3:0);
     if(sn.lingering) sc.cold=Math.max(0,(sc.cold||0)-4);   // it has stopped being a simple cold
   }
+  /* CONTAINER conditions describe a single symptom that nearly every illness
+     produces. "Fever" matches a typhoid story, a diverticulitis story and a
+     strep throat story equally well, so it wins on vocabulary while saying
+     nothing useful — the same attractor behaviour that made every limb injury
+     a "sprain". They only win when nothing more specific has real support. */
+  const CONTAINER=["fever","headache","cough","generic","fatigue","stomach_pain","joint_pain","rash","dizziness"];
+  let bestSpecific=0;
+  for(const id in sc){ if(!CONTAINER.includes(id) && sc[id]>bestSpecific) bestSpecific=sc[id]; }
+  if(bestSpecific>=3) CONTAINER.forEach(id=>{ if(sc[id]!==undefined) sc[id]=Math.min(sc[id], bestSpecific-1); });
+
   // the narrative reader's opinion counts, but doesn't override a strong keyword match
   if(S.llmHint) sc[S.llmHint]=(sc[S.llmHint]||0)+3;
   S.scores=sc;

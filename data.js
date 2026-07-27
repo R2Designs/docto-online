@@ -34,6 +34,35 @@ redFlagKeywords: [
 
    Each rule fires only when EVERY group in `need` has at least one hit in the
    text. Several rules may share an id (different routes to the same emergency). */
+/* ---------- HALLMARK SIGNS ----------
+   A hallmark is a finding that, on its own, changes what should happen next —
+   the thing a clinician asks about precisely because the answer decides the
+   management. Generic keyword scoring cannot represent that: "heard a pop in my
+   ankle, can't stand on tiptoes" scores highly for `sprain` on the word ankle,
+   and the sprain plan (rest, ice, compression) is wrong for a torn Achilles
+   that needs imaging and possibly surgery. Same story for a scaphoid fracture
+   hiding inside "wrist pain after a fall".
+
+   So hallmarks are matched explicitly and win outright. Each names either a
+   condition (cond) or a red flag (flag). This is the same principle already
+   proven twice: jaw claudication + age forces GCA, reproducible chest pain
+   forces the chest-wall entry. Generalising it is what stops the next
+   "specific injury collapses into the nearest generic plan" bug. */
+hallmarks: [
+ {sign:/\b(pop|snap|crack)\w*\b[^.]{0,60}?\b(ankle|calf|heel|achilles)\b|\b(achilles|calf|heel)\b[^.]{0,40}?\b(pop|snap|gave way|kicked)\b|kicked (?:me )?in the (?:calf|back of the leg)|(?:cannot|can'?t|unable to)\b[^.]{0,30}?\b(tip ?toe|tiptoes|stand on my toes|push off)/i,
+  flag:"achilles_rupture", why:"a heard pop with inability to push off is a torn Achilles until proven otherwise"},
+ {sign:/\b(snuff ?box|anatomical snuffbox)\b|\bbase of (?:the )?thumb\b[^.]{0,40}\b(tender|pain)\b[^.]{0,60}\bfall/i,
+  flag:"scaphoid", why:"snuffbox tenderness after a fall is a scaphoid fracture until an X-ray at 10-14 days says otherwise"},
+ {sign:/\b(?:can'?t|cannot|barely|hard to|difficult to|unable to)\b[^.]{0,40}\bopen (?:my )?mouth\b|\btrismus\b|\bhot potato\b|\bmuffled\b[^.]{0,30}\bvoice\b|\bvoice\b[^.]{0,30}\bmuffled\b|\buvula\b[^.]{0,30}\b(pushed|deviat)/i,
+  flag:"quinsy", why:"trismus or a muffled voice with a one-sided sore throat means an abscess, not tonsillitis"},
+ {sign:/(?=[^]*\b(blister|rash|eruption)\w*\b)(?=[^]*\b(band|stripe|strip|line|patch|belt)\b)(?=[^]*\b(one side|left side|right side|one half|single side)\b)|(?:does ?n'?t|did ?n'?t|does not|did not|never)\s+cross(?:es|ed)?\s+(?:over\s+)?the\s+(?:middle|midline|centre|center)|\bdermatom/i,
+  cond:"shingles", why:"a blistering rash in a band on one side that stops at the midline is shingles"},
+ {sign:/\b(cola|coke|tea)[- ]colou?red\b[^.]{0,30}\burine\b|\burine\b[^.]{0,30}\b(cola|coke|tea)[- ]colou?red\b|\b(dark red|brown)\b[^.]{0,20}\burine\b[^.]{0,60}\bno pain\b/i,
+  flag:"haematuria_painless", why:"blood in urine without pain always needs investigating"},
+ {sign:/\bsudden\b[^.]{0,40}\b(total|complete|all)\b[^.]{0,20}\bhearing loss\b|\bwoke up\b[^.]{0,40}\b(deaf|cannot hear|can'?t hear|no hearing)\b|\bhearing (?:has )?(?:gone|disappeared)\b[^.]{0,30}\bsudden/i,
+  flag:"sudden_hearing_loss", why:"sudden one-sided deafness has a 48-72 hour steroid window"}
+],
+
 redFlagPatterns: [
  /* Appendicitis — route 1: right-lower-quadrant pain + migration/movement pain */
  {id:"appendicitis", need:[
@@ -390,9 +419,10 @@ redFlagPatterns: [
    ["soaking","pads every hour","pads per hour","two pads","heavy bleeding","clots","bleeding a lot"]
  ]},
  /* Persistent hoarseness — a laryngeal cancer red flag that reads like a sore throat */
- {id:"hoarseness_persistent", need:[
-   ["hoarse","voice has gone","voice change","raspy voice","lost my voice"],
-   ["three weeks","3 weeks","month","months","weeks now","not improving","won't go"]
+ /* minDays does the work the phrase list used to do badly: "6 weeks" is longer
+    than three weeks whether or not anyone wrote the words "three weeks". */
+ {id:"hoarseness_persistent", minDays:21, need:[
+   ["hoarse","hoarseness","voice has gone","voice change","raspy voice","lost my voice","husky voice"]
  ]},
 /* Chorioamnionitis — infection inside the womb after the waters break */
  {id:"chorioamnionitis", need:[
@@ -569,6 +599,18 @@ redFlagPatterns: [
  ]}
 ],
 emergencyAdvice: {
+/* ---- Conditions selected for TIME-CRITICALITY, not prevalence ----
+   The catalogue was built from India primary-care frequency data, which is the
+   right way to decide what to treat but the wrong way to decide what to
+   RECOGNISE. Anything with a treatment window belongs here however rare it is,
+   because the cost of missing it is measured in permanent damage rather than in
+   a longer illness. These all failed an external audit for exactly that reason. */
+ sudden_hearing_loss:"Sudden hearing loss in one ear, especially on waking and without pain, is treated as sudden sensorineural hearing loss until proven otherwise. It is a medical emergency of the ear: high-dose steroids started within 48-72 hours recover hearing in a good proportion of people, and after about two weeks very little can be done. Do not wait to see if it clears, and do not treat it as wax. Get to an ENT department today and ask specifically about steroid treatment and an urgent audiogram.",
+ achilles_rupture:"A heard or felt 'pop' at the back of the ankle with inability to push off, stand on tiptoe or walk normally is a ruptured Achilles tendon. It is frequently mistaken for a sprain and treated with rest, which lets the ends separate and worsens the outcome. Do NOT massage it, do not stretch it, and do not 'walk it off'. Keep the foot pointed down, do not bear weight, and get to an orthopaedic department today — the repair decision is time-sensitive.",
+ scaphoid:"Pain and tenderness in the hollow at the base of the thumb after falling on an outstretched hand is a scaphoid fracture until an X-ray at 10-14 days says otherwise. The first X-ray is normal in up to a quarter of cases, so a normal film today does not clear it. Missed scaphoid fractures lose their blood supply and the bone dies, causing permanent wrist arthritis in a young hand. Ask for a thumb spica splint and a repeat X-ray or MRI — do not accept 'just a sprain' without it.",
+ quinsy:"A one-sided sore throat with difficulty opening the mouth, a muffled 'hot potato' voice, or drooling is a peritonsillar abscess, not tonsillitis. It needs drainage plus intravenous antibiotics, and it can obstruct the airway. Antibiotics by mouth alone will not fix a collection of pus. Go to an ENT or emergency department today; do not lie flat if breathing feels tight.",
+ haematuria_painless:"Blood in the urine without any pain is the one urinary symptom that must never be dismissed, because painless bleeding is how bladder and kidney cancers announce themselves — and equally how kidney inflammation (glomerulonephritis) does, especially with puffy eyelids or ankle swelling. It needs urine testing, kidney function and imaging regardless of whether it settles on its own. See a doctor this week even if the urine looks normal tomorrow.",
+
  /* Used when the reader recognises a genuine emergency we have no specific entry
     for. The safety instructions are ours; only the reason is quoted from the reader. */
 septic_arthritis:"A single joint that is hot, swollen and so painful you cannot move it, with fever, is a septic joint until proven otherwise. Pus inside a joint destroys the cartilage within days and it is easily mistaken for gout. Go to an emergency department NOW and ask for the joint to be aspirated before any steroid is given.",
@@ -726,7 +768,9 @@ septic_arthritis:"A single joint that is hot, swollen and so painful you cannot 
 /* Not every red flag is an ambulance. These need care today or this week, and
    labelling them "EMERGENCY" would both frighten people and, worse, teach them
    to discount the banner when it really is one. */
-urgentIds:["pyelonephritis_flag","cellulitis_flag","rabies_flag","oral_cancer_flag","hoarseness_persistent","tia","nph","subdural"],
+urgentIds:["pyelonephritis_flag","cellulitis_flag","rabies_flag","oral_cancer_flag","hoarseness_persistent","tia","nph","subdural",
+ /* time-critical but not "call an ambulance" — same-day or this-week care */
+ "sudden_hearing_loss","achilles_rupture","scaphoid","quinsy","haematuria_painless"],
 emergencyDifferentials: {
  atypical_acs:["A heart attack — which in older and diabetic people often comes with no chest pain",
    "A serious infection turning body-wide (sepsis)",
@@ -2114,6 +2158,111 @@ conds: [
   "Weakness, foot drop, or unsteadiness in the dark","Symptoms in the hands too, or climbing above the ankles"],
  emerg:["An ulcer or wound on the foot that is black, foul-smelling, or surrounded by spreading redness",
   "Fever with a foot wound","A foot that is cold, pale or pulseless","A burn on a numb foot from a heater, hot water or hot sand"]},
+
+/* ---- Added on the time-criticality axis, not the prevalence axis ---- */
+
+{id:"shingles", rg:"skin", nm:"Shingles (herpes zoster)", refer:true,
+ al:["shingles","herpes zoster","zoster","band of blisters","blisters on one side","rash on one side",
+  "burning rash","nerve pain rash","dad ka rash","one side rash","stripe of blisters"],
+ sys:"skin", doctor:"Physician (same week — antiviral window)",
+ modern:[
+  {t:"A painful, blistering rash in a band on one side that stops dead at the midline is shingles — the chickenpox virus reactivating along a single nerve. The burning or tingling usually starts a day or two before the rash appears."},
+  {t:"There is a 72-hour window. Antivirals (aciclovir, valaciclovir) started within 72 hours of the rash appearing markedly reduce the pain and the risk of long-lasting nerve pain afterwards. This is the whole reason to be seen quickly rather than waiting."},
+  {t:"Post-herpetic neuralgia — nerve pain that outlasts the rash by months — is the complication that matters, and it is commoner with age and with delayed treatment. Ordinary painkillers help the rash pain; the nerve pain needs different medicines."},
+  {t:"Keep the rash clean and dry and cover it loosely. You are infectious to anyone who has never had chickenpox until the last blister crusts over — stay away from newborns, pregnant women and anyone on chemotherapy or steroids."},
+  {t:"Do not apply steroid creams, and do not burst the blisters."}],
+ ayur:["Visarpa or Parisarpa is the classical description — a spreading, burning eruption of Pitta.",
+  "Cooling local applications such as chandana or yashtimadhu paste are traditional; keep them off broken skin.",
+  "Guduchi and amalaki are used internally for Pitta pacification, practitioner-guided.",
+  "Cool, non-spicy, non-fermented food while the rash is active — but none of this replaces the antiviral window."],
+ tests:[],
+ seeDoc:["Any shingles rash — ideally within 72 hours of it appearing, for antivirals",
+  "Rash near or around the eye or on the tip of the nose — that threatens sight, go the same day",
+  "Rash in or around the ear with facial weakness or dizziness","Pain persisting after the rash heals",
+  "If you are pregnant, immunosuppressed, or on chemotherapy — same day"],
+ emerg:["Rash involving the eye, or any change in vision","Widespread rash all over the body rather than one band",
+  "Severe headache, neck stiffness, confusion or drowsiness with the rash","Facial droop or hearing loss with an ear rash"]},
+
+{id:"prostatitis", rg:"pelvis", nm:"Prostatitis (suspected)", refer:true,
+ al:["prostatitis","perineal pain","pain between legs","sitting on a golf ball","pain with ejaculation",
+  "pelvic pain and fever","prostate pain","difficulty peeing with fever"],
+ sys:"urology", doctor:"Physician / urologist (same day if feverish)",
+ modern:[
+  {t:"Fever and chills with deep pelvic or perineal pain — often described as sitting on a golf ball — plus painful ejaculation and difficulty passing urine, is acute bacterial prostatitis. It is an infection of the prostate and needs a proper antibiotic course, not a three-day one."},
+  {t:"This needs a doctor the same day when there is fever. Untreated it can progress to an abscess or to sepsis, and it can cause complete urinary retention."},
+  {t:"The antibiotic has to be one that penetrates the prostate and it is usually given for 2-4 weeks. Stopping early is the commonest reason it turns chronic and becomes very hard to treat."},
+  {t:"Warm sitz baths, paracetamol and plenty of fluids help meanwhile. Avoid prolonged cycling or sitting on hard surfaces while it settles.", f:"pcm"},
+  {t:"Do not have a urinary catheter passed through the urethra if it can be avoided — say that you may have prostatitis."}],
+ ayur:["Mutrakrichra with Pitta-Kapha involvement is the classical framing.",
+  "Gokshura and Punarnava are the traditional urinary herbs, practitioner-guided and alongside — not instead of — antibiotics.",
+  "Warm sitz baths and avoiding spicy, fermented and very sour food while acute.",
+  "Adequate water intake throughout the day."],
+ tests:["uti"],
+ seeDoc:["Fever with pelvic or perineal pain — same day","Pain on ejaculating, or blood in semen",
+  "Symptoms that return after antibiotics finish","Any difficulty starting or passing urine"],
+ emerg:["Unable to pass urine at all with a full painful bladder","High fever with shaking chills and confusion",
+  "Severe pain with vomiting and inability to keep fluids down"]},
+
+{id:"diverticulitis", rg:"abdomen", nm:"Diverticulitis (suspected)", refer:true,
+ al:["diverticulitis","left lower abdominal pain","left lower stomach pain","lower left stomach pain",
+  "pain lower left side","left side stomach pain","pain on the left lower side","tender left lower abdomen",
+  "left iliac fossa pain","tenderness on pressing left side"],
+ sys:"gi", doctor:"Physician / surgeon (same day)",
+ modern:[
+  {t:"Pain low on the LEFT side of the abdomen with fever and a change in bowel habit is diverticulitis — small pouches in the colon wall becoming inflamed or infected. Think of it as appendicitis's mirror image: same idea, other side, older patient."},
+  {t:"It needs same-day assessment. Most mild cases settle with antibiotics and a liquid diet, but perforation, an abscess or an obstruction are real complications and they are what the examination and scan are looking for."},
+  {t:"Clear fluids only until you have been seen. Do not take laxatives and do not have an enema — pushing against an inflamed segment risks perforating it."},
+  {t:"Avoid ibuprofen and other anti-inflammatories, which increase the perforation risk. Paracetamol is the safer painkiller here.", f:"pcm"},
+  {t:"Once it has fully settled, a high-fibre diet and good hydration reduce recurrences — but fibre during an acute attack makes it worse."}],
+ ayur:["Grahani and Pakvashaya-gata Vata describe the colonic involvement in classical terms.",
+  "During the acute phase Ayurveda also advises rest of the gut — light liquid diet, nothing heavy or fibrous.",
+  "Once settled, Triphala at night and buttermilk with roasted cumin support colonic function.",
+  "Long-term: adequate water, regular meals, and no habitual laxative use."],
+ tests:["fever>3d"],
+ seeDoc:["Left lower abdominal pain with fever — same day","Pain that keeps returning in the same place",
+  "Any blood in the stool","Symptoms in someone over 50 with a change in bowel habit"],
+ emerg:["Board-hard, rigid abdomen","Severe pain with high fever and vomiting","Unable to pass gas or stool with a swollen abdomen",
+  "Heavy rectal bleeding, dizziness or fainting"]},
+
+{id:"cluster_headache", rg:"head", nm:"Cluster headache (suspected)", refer:true,
+ al:["cluster headache","pain behind one eye","behind my left eye","behind my right eye","same time every night headache",
+  "eye watering headache","one eye tearing","suicide headache","stabbing behind the eye"],
+ sys:"neuro", doctor:"Neurologist",
+ modern:[
+  {t:"Strictly one-sided, excruciating pain behind or around one eye, lasting 15 minutes to 3 hours, striking at the same time each day — often waking you at night — with a watering eye, drooping lid or blocked nostril on that side, is a cluster headache. It is a distinct disease from migraine and it does not respond to migraine self-care."},
+  {t:"Ordinary painkillers are useless here — the attack is over before a tablet is absorbed. The treatments that work are high-flow oxygen through a mask and injectable or nasal sumatriptan, both of which need a doctor's prescription and a proper diagnosis."},
+  {t:"There are also preventive medicines (verapamil most commonly) taken through a cluster period. Getting these started is the main reason to see a neurologist rather than enduring it."},
+  {t:"Alcohol reliably triggers attacks during a cluster period — avoid it completely until the period ends."},
+  {t:"Cluster headache is one of the most painful conditions in medicine and is strongly associated with despair when untreated. If the pain has you feeling hopeless, say so to the doctor — it is a recognised part of this diagnosis, and it is treatable."}],
+ ayur:["Suryavarta is the classical description — a one-sided head pain with a strict daily rhythm.",
+  "Nasya with Shadbindu or Anu taila is the traditional therapy for Urdhwajatrugata Vata.",
+  "Shirodhara and Vata-pacifying routine, practitioner-supervised.",
+  "Regular sleep and meal timing matters here more than usual — the disorder is tied to the body clock."],
+ tests:["headache_chronic"],
+ seeDoc:["One-sided headaches around the eye with tearing or a blocked nostril — see a neurologist",
+  "Attacks waking you at the same hour each night","Any headache pattern that has changed from your usual"],
+ emerg:["Worst headache of your life coming on in seconds","Headache with fever, neck stiffness or a rash",
+  "Headache with weakness, slurred speech or drooping on one side","Sudden loss or blurring of vision"]},
+
+{id:"strep_throat", rg:"head", nm:"Bacterial (strep) throat", refer:true,
+ al:["strep throat","white spots on tonsils","pus on tonsils","white patches throat","swollen neck glands fever",
+  "sore throat no cough","tonsils white","gale me safed dane"],
+ sys:"ent", doctor:"Physician",
+ modern:[
+  {t:"Fever, tender swollen glands in the front of the neck, white spots on the tonsils, and NO cough — that combination points to a bacterial (streptococcal) throat rather than a viral one. Viral sore throats almost always come with a cough or a runny nose."},
+  {t:"This is worth a doctor's visit because it is the one sore throat that benefits from antibiotics — not for the sore throat itself, which settles anyway, but to prevent rheumatic fever, which still causes heart valve damage in India."},
+  {t:"Do not start leftover antibiotics from home. If antibiotics are prescribed, finish the whole course even after you feel better — the point is preventing the complication, not relieving the pain."},
+  {t:"Meanwhile: paracetamol, warm salt-water gargles, cool fluids and soft food. Rest the voice.", f:"pcm"},
+  {t:"See a doctor again if you develop a rash like sandpaper, joint pains, or dark or reduced urine in the weeks afterwards."}],
+ ayur:["Tundikeri (tonsillar inflammation) is the classical correlate.",
+  "Warm salt or turmeric water gargles; Yashtimadhu (liquorice) as a decoction to gargle or sip.",
+  "Sitopaladi churna with honey for adults; avoid cold and sour foods and curd at night.",
+  "Ayurveda supports this well symptomatically, but rheumatic fever prevention is the reason to see a doctor."],
+ tests:[],
+ seeDoc:["Fever with white spots on the tonsils and no cough — get a throat check",
+  "Sore throat lasting beyond a week","Rash, joint pains, or dark urine after a throat infection"],
+ emerg:["Difficulty breathing, drooling, or unable to swallow your own saliva","Unable to open the mouth fully, or a muffled voice",
+  "One-sided throat swelling pushing the uvula across","Neck swelling with fever and a stiff neck"]},
 
 {id:"generic", rg:"systemic", nm:"General health concern", al:[],
  sys:"general", doctor:"General physician",
