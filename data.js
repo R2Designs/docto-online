@@ -34,6 +34,70 @@ redFlagKeywords: [
 
    Each rule fires only when EVERY group in `need` has at least one hit in the
    text. Several rules may share an id (different routes to the same emergency). */
+/* ---------- DRUG INTERACTIONS ----------
+   The app asked "any medicines you take regularly?" from day one and then never
+   used the answer for anything except printing it in the report. So a man on
+   warfarin could be shown ibuprofen gel, guggulu and turmeric milk — three
+   separate bleeding risks — by a system that had been told he was anticoagulated.
+
+   `has` matches what the PATIENT is taking (from the medicines answer and the
+   complaint). `avoid` matches what WE were about to suggest. Screening is by
+   substance so it covers the Ayurvedic list too: guggulu interacts with warfarin
+   whichever section of the page recommends it. */
+interactions: [
+ {id:"warfarin",
+  has:/\bwarfarin\b|\bacitrom\b|\bacenocoumarol\b|\bcoumadin\b|\bnicoumalone\b|\bblood thinner|\banticoagulant|\bapixaban\b|\brivaroxaban\b|\bdabigatran\b|\beliquis\b|\bxarelto\b/i,
+  avoid:/\bibuprofen\b|\bdiclofenac\b|\bnaproxen\b|\bnsaid\b|\baspirin\b|\bnimesulide\b|\bmefenamic\b|\bketorolac\b|\bcombiflam\b|\bbrufen\b|\bvoveran\b/i,
+  why:"you are on a blood thinner — anti-inflammatory painkillers (ibuprofen, diclofenac, aspirin) markedly raise the risk of serious bleeding, including in the stomach. This applies to gels and sprays too, which are absorbed through the skin."},
+ {id:"warfarin_herb",
+  has:/\bwarfarin\b|\bacitrom\b|\bacenocoumarol\b|\bblood thinner|\banticoagulant|\bapixaban\b|\brivaroxaban\b|\beliquis\b/i,
+  avoid:/\bguggul|\bturmeric\b|\bcurcumin\b|\bhaldi\b|\bfenugreek\b|\bmethi\b|\bginkgo\b|\bgarlic\b|\blahsun\b|\bdong quai\b|\bginseng\b|\bgiloy\b|\bashwagandha\b|\bginger juice\b/i,
+  why:"you are on a blood thinner, and these herbs (guggulu, turmeric, fenugreek, garlic, ginkgo among them) affect clotting or interfere with how the drug is cleared. Food amounts are fine; concentrated supplements are not — check every herbal product with the doctor who manages your INR."},
+ {id:"stjohns",
+  has:/st\.? ?john'?s? wort|\bhypericum\b/i,
+  avoid:/./,
+  why:"St John's Wort speeds up the liver's clearance of many medicines. It can make warfarin, the contraceptive pill, HIV and transplant drugs, and several heart medicines stop working properly — and combined with an antidepressant it can cause serotonin syndrome. Do not stop your prescribed medicine; stop the St John's Wort and tell your doctor you were taking it."},
+ {id:"ssri",
+  has:/\bssri\b|sertraline|fluoxetine|escitalopram|citalopram|paroxetine|venlafaxine|duloxetine|amitriptyline/i,
+  avoid:/st\.? ?john'?s? wort|\btramadol\b|\btriptan\b|sumatriptan|\blinezolid\b/i,
+  why:"combined with your antidepressant these can cause serotonin syndrome — agitation, sweating, tremor, fever and a racing heart."},
+ {id:"acei_nsaid",
+  has:/\blisinopril\b|\bramipril\b|\benalapril\b|\bperindopril\b|\btelmisartan\b|\blosartan\b|\bolmesartan\b|\bacei\b|\barb\b|\bspironolactone\b|\bfurosemide\b|\blasix\b|\bdiuretic\b/i,
+  avoid:/\bibuprofen\b|\bdiclofenac\b|\bnaproxen\b|\bnsaid\b|\bnimesulide\b|\bcombiflam\b|\bbrufen\b/i,
+  why:"anti-inflammatory painkillers together with your blood-pressure or water tablet can injure the kidneys — the combination is a well-recognised cause of sudden kidney failure, especially if you are also dehydrated."},
+ {id:"lithium_nsaid",
+  has:/\blithium\b/i, avoid:/\bibuprofen\b|\bdiclofenac\b|\bnaproxen\b|\bnsaid\b/i,
+  why:"anti-inflammatory painkillers raise lithium levels into the toxic range."},
+ {id:"methotrexate_nsaid",
+  has:/methotrexate/i, avoid:/\bibuprofen\b|\bdiclofenac\b|\bnaproxen\b|\bnsaid\b|\baspirin\b/i,
+  why:"anti-inflammatory painkillers reduce clearance of methotrexate and increase its toxicity."},
+ {id:"metformin_nsaid",
+  has:/metformin/i, avoid:/\bibuprofen\b|\bdiclofenac\b|\bnsaid\b/i,
+  why:"if the kidneys are stressed by anti-inflammatory painkillers, metformin can accumulate — get kidney function checked before regular use."}
+],
+
+/* Dangerous things the person told us they are ALREADY doing. These are not
+   about filtering our advice — they are about not staying silent when the
+   complaint itself describes a harmful combination. */
+medAlarms: [
+ {id:"anticoag_nsaid",
+  need:[[/\bwarfarin\b|\bacitrom\b|\bacenocoumarol\b|blood thinner|anticoagulant|\bapixaban\b|\brivaroxaban\b|\beliquis\b/i],
+        [/\bibuprofen\b|\bdiclofenac\b|\bnaproxen\b|\bnsaid\b|\baspirin\b|\bcombiflam\b|\bbrufen\b|\bnimesulide\b/i]],
+  why:"You are taking an anti-inflammatory painkiller together with a blood thinner. That combination substantially raises the risk of bleeding — particularly stomach bleeding, which can be heavy and painless until it is severe. Do not take further doses, and speak to your doctor today."},
+ {id:"anticoag_sjw",
+  need:[[/\bwarfarin\b|\bacitrom\b|\bacenocoumarol\b|blood thinner|anticoagulant/i],
+        [/st\.? ?john'?s? wort|\bhypericum\b/i]],
+  why:"St John's Wort makes warfarin much less effective, which raises the risk of a clot or stroke — the very thing the warfarin is there to prevent. Do not stop the warfarin. Stop the St John's Wort and tell your doctor, because your INR needs rechecking."},
+ {id:"borrowed_medicine",
+  need:[[/friend gave|someone gave|borrowed|leftover|left over|left-over|my (?:brother|sister|neighbour|neighbor|husband|wife)'?s? (?:medicine|tablets|inhaler)|from a friend/i],
+        [/\btablet|\bmedicine|\binhaler|\bsyrup|\bantibiotic|\bpainkiller|\bibuprofen\b|\bdiclofenac\b/i]],
+  why:"These are someone else's prescribed medicines. The dose was worked out for their body, their kidneys and their other medicines — not yours. Please do not take them."},
+ {id:"ckd_nsaid",
+  need:[[/kidney disease|\bckd\b|renal (?:failure|impairment|disease)|creatinine|dialysis|kidney problem/i],
+        [/\bibuprofen\b|\bdiclofenac\b|\bnaproxen\b|\bnsaid\b|\bcombiflam\b|\bbrufen\b|\bnimesulide\b/i]],
+  why:"Anti-inflammatory painkillers are one of the commonest causes of a sudden drop in kidney function in people who already have kidney disease. This includes gels and sprays. Paracetamol is the safer choice — ask your doctor for the right dose for your kidney function."}
+],
+
 /* ---------- ALARM FEATURES ----------
    Clinicians do not carry every rare disease in their head. They carry a short
    list of FEATURES that mean "this is not a self-care problem", and they act on

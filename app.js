@@ -2,7 +2,7 @@
 "use strict";
 /* Keep in step with the ?v= token on the script tags in index.html. Shown in the
    footer, so a cached old build is visible instead of silently giving old advice. */
-const BUILD = 18;
+const BUILD = 19;
 window.DOCTO_BUILD = BUILD;
 const CONFIG = {
   GOOGLE_CLIENT_ID: (window.DOCTO_CONFIG && window.DOCTO_CONFIG.GOOGLE_CLIENT_ID) || "", // set this in config.js
@@ -812,11 +812,41 @@ function pedsCheck(text){
   }
   return {ok:true, why:null};
 }
+/* Everything we know the person is taking: the medicines answer plus the
+   complaint itself, because people mention drugs in the story far more often
+   than they fill in a medicines field. */
+function patientDrugs(){
+  const parts=[];
+  if(typeof S!=="undefined" && S){
+    if(S.meds) parts.push(String(S.meds));
+    if(S.complaint) parts.push(String(S.complaint));
+    if(Array.isArray(S.conds)) parts.push(S.conds.join(" "));
+  }
+  return " "+parts.join(" ").toLowerCase()+" ";
+}
+/* Would this suggestion clash with what they are already on? Same {ok,why}
+   shape as pedsCheck, so it screens the Ayurvedic list identically. */
+function interactionCheck(text){
+  const mine=patientDrugs();
+  const t=" "+String(text||"").toLowerCase()+" ";
+  for(const r of (DB.interactions||[])){
+    if(r.has.test(mine) && r.avoid.test(t)) return {ok:false, why:r.why};
+  }
+  return {ok:true, why:null};
+}
+/* Harmful combinations in what they told us they are ALREADY doing. */
+function medAlarmsIn(){
+  const mine=patientDrugs();
+  return (DB.medAlarms||[]).filter(a => a.need.every(g => g.some(re => re.test(mine))));
+}
 function medAllowed(item){
   const f=item.f||"";
   // age first: a paediatric contraindication outranks every other consideration
   const peds=pedsCheck(item.t||"");
   if(!peds.ok) return peds;
+  // then what they are already taking — a clash makes our suggestion unsafe
+  const inter=interactionCheck(item.t||"");
+  if(!inter.ok) return inter;
   if(S.preg){ if(f==="nsaid"||f==="decong"||f==="lax_stim") return {ok:false, why:"avoided in pregnancy"}; }
   if(S.allergies.includes("nsaid") && f==="nsaid") return {ok:false, why:"you reported painkiller (NSAID) allergy"};
   if(S.conds.includes("ulcer") && f==="nsaid") return {ok:false, why:"avoided with stomach ulcer — use paracetamol instead"};
@@ -1117,7 +1147,8 @@ async function assess(){
      doctor about this specifically" even when the complaint routed to something
      ordinary — because the commonest way to under-triage is to name a benign
      condition that genuinely fits and stop looking. */
-  S.alarms = alarmsIn(scrubNegations(" "+String(S.complaint||"").toLowerCase()+" "));
+  S.alarms = alarmsIn(scrubNegations(" "+String(S.complaint||"").toLowerCase()+" "))
+             .concat(medAlarmsIn());
   const alarmNote = S.alarms.length
     ? `<div class="emg" style="text-align:left"><b>Before anything else — this needs a doctor, whatever else is going on:</b><ul style="margin:6px 0 0 16px">`
       + S.alarms.map(a=>`<li style="margin:4px 0">${esc(a.why)}</li>`).join("") + `</ul></div>`
@@ -1153,7 +1184,7 @@ async function assess(){
   // which is how honey kept being recommended to an infant on the same page that
   // correctly refused it two sections above.
   html+=sec("s-ayur","leaf",t("ayur_title"))+`<ul>`;
-  c.ayur.forEach(a=>{ const chk=pedsCheck(a);
+  c.ayur.forEach(a=>{ let chk=pedsCheck(a); if(chk.ok) chk=interactionCheck(a);
     if(chk.ok) html+=`<li>${esc(a)}</li>`;
     else html+=`<li style="color:#8a8a8a;text-decoration:line-through">${esc(a)}</li><li style="color:#a65c00">↳ Skipped: ${esc(chk.why)}.</li>`; });
   html+=`</ul>`;
