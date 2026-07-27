@@ -408,6 +408,26 @@ const FLAG_GUARDS={
             "lips are white","ghostly","hb 5","hb 6","hb of 5","hb of 6","black tarry","bleeding heavily",
             "confused","drowsy"]
   },
+  /* Dengue is only "severe dengue" once a WHO warning sign appears — and those
+     appear as the fever FALLS. Calling every dengue-shaped fever an emergency
+     sends half a monsoon to casualty and teaches people to ignore the one time
+     it matters. Feeling weak is not a warning sign. */
+  dengue_severe:{
+    benign:[""],
+    danger:["severe abdominal","severe belly","severe stomach pain","bad stomach pain","persistent vomit","keeps vomiting",
+            "cannot keep","bleeding gum","gums bleed","nose bleed","nosebleed","blood in vomit","black stool","blood in stool",
+            "red spots","rash spreading","faint","fainted","dizzy on standing","cold and clammy","clammy","restless",
+            "very drowsy","lethargic","not passing urine","platelet","fever has come down","fever dropped","fever broke",
+            "breathless","swollen belly","liver pain"]
+  },
+  /* Kidney infection needs the kidney in the picture: loin/flank pain or urinary
+     symptoms. Fever plus a vague belly ache is a hundred other things. */
+  pyelonephritis_flag:{
+    benign:[""],
+    danger:["loin","flank","kidney","side of my back","back pain with fever","burning urine","burning while passing",
+            "burning when i pass","passing urine","urine","peshab","urin","frequency","rigors","shivering with fever",
+            "chills and fever","foul smelling urine","cloudy urine","blood in urine"]
+  },
   // "short of breath" said calmly in a paragraph is not "severe difficulty breathing"
   breathing:{
     benign:[""],
@@ -474,7 +494,13 @@ function editLe1(a,b){ // true if edit distance <= 1
   return d+(a.length-i)+(b.length-j)<=1;
 }
 function scoreConditions(){
-  const text=S.complaint.toLowerCase(); const sc={};
+  /* Route on what the person HAS, not on words they used to rule things out.
+     Red flags have been negation-aware for a while; condition routing was not,
+     so "no fever no back pain" scored `fever` and beat the actual complaint.
+     People describing symptoms list denials constantly — this is not an edge case. */
+  const raw=S.complaint.toLowerCase();
+  const text=scrubNegations(" "+raw+" ").trim();
+  const sc={};
   const toks=text.split(/[^a-z0-9]+/).filter(x=>x.length>=4);
   DB.conds.forEach(c=>{ let s=0;
     c.al.forEach(a=>{
