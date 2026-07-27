@@ -2,7 +2,7 @@
 "use strict";
 /* Keep in step with the ?v= token on the script tags in index.html. Shown in the
    footer, so a cached old build is visible instead of silently giving old advice. */
-const BUILD = 14;
+const BUILD = 15;
 window.DOCTO_BUILD = BUILD;
 const CONFIG = {
   GOOGLE_CLIENT_ID: (window.DOCTO_CONFIG && window.DOCTO_CONFIG.GOOGLE_CLIENT_ID) || "", // set this in config.js
@@ -347,6 +347,43 @@ function ageMonths(){
 }
 function isInfant(){ const m=ageMonths(); return m!==null && m<12; }
 function isUnderFour(){ const m=ageMonths(); return m!==null && m<48; }
+
+/* The age question is asked before we know WHO the patient is. A parent answers
+   it about themselves and then writes "my 10-month-old has a cough" — leaving
+   every dose and every contraindication computed for a 30-year-old. So the
+   complaint is re-read for the patient's real age, and a child named there wins.
+   Deliberately conservative: an age is only accepted when it is anchored to
+   "old" or sits beside a word for a child, so that "cough for 8 days" and
+   "started 3 weeks ago" are never mistaken for somebody's age. */
+const CHILD_WORD=/\b(baby|babies|infant|newborn|new born|toddler|child|kid|son|daughter|grandson|granddaughter|nephew|niece|bachch?a|bachch?i|bachch?e|beta|beti|ladka|ladki|shishu|navjat|munna|munni)\b/i;
+function narrativeAge(text){
+  const low=" "+String(text||"").toLowerCase()+" ";
+  const anchored=[
+    [/\b(\d{1,2})\s*(?:-|\s)?\s*months?\s*(?:-|\s)?\s*old\b/, m=>+m[1]],
+    [/\b(\d{1,2})\s*(?:-|\s)?\s*weeks?\s*(?:-|\s)?\s*old\b/,  m=>+m[1]/4.345],
+    [/\b(\d{1,3})\s*(?:-|\s)?\s*days?\s*(?:-|\s)?\s*old\b/,   m=>+m[1]/30],
+    [/\b(\d{1,2})\s*(?:-|\s)?\s*(?:years?|yrs?|saal)\s*(?:-|\s)?\s*old\b/, m=>+m[1]*12]
+  ];
+  for(const [re,f] of anchored){ const m=re.exec(low); if(m) return f(m); }
+  // "my son is 7", "beta 2 saal ka", "baby is 10 months"
+  const UNIT="(months?|mahine|weeks?|hafte|saal|years?|yrs?)";
+  const toMonths=(n,unit)=> /month|mahine/.test(unit) ? n
+                          : /week|hafte/.test(unit)   ? n/4.345
+                          : n*12;
+  const near=new RegExp("\\b(?:baby|infant|newborn|toddler|child|kid|son|daughter|bachcha|bachchi|beta|beti|shishu)\\b[^.]{0,25}?\\b(\\d{1,2})\\s*"+UNIT+"\\b").exec(low)
+          || new RegExp("\\b(\\d{1,2})\\s*"+UNIT+"\\b[^.]{0,25}?\\b(?:ka|ki|old)?\\s*(?:baby|infant|newborn|toddler|child|kid|son|daughter|bachcha|bachchi|beta|beti|shishu)\\b").exec(low);
+  if(near) return toMonths(+near[1], near[2]);
+  /* "my son is 7" — a bare number beside a child word means years, but only when
+     no unit follows it, or "baby is 6 weeks" silently becomes a six-year-old. */
+  const bare=/\b(?:my |mera |meri )?(?:son|daughter|baby|child|kid|beta|beti|bachcha|bachchi)\s+(?:is\s+)?(\d{1,2})\b(?!\s*(?:month|week|day|mahine|hafte|din))/.exec(low);
+  if(bare){ const n=+bare[1]; if(n<=18) return n*12; }
+  return null;
+}
+/* True when the complaint is clearly about a child but gives us no age. Unknown
+   must not silently mean "adult" — that is the failure mode we are fixing. */
+function mentionsChildNoAge(text){
+  return CHILD_WORD.test(String(text||"")) && narrativeAge(text)===null;
+}
 
 /* Numbers people quote in passing are often the most important thing they've said.
    "my cuff reads 195/115" is a hypertensive emergency whatever they think it is. */
@@ -1041,6 +1078,23 @@ async function flow(input){
     case "welcome": break;
     case "complaint": {
       S.complaint=input;
+      /* Who is this actually about? The age question was answered before we knew.
+         A child's age stated here replaces it — and a child mentioned with no age
+         gets asked, because treating "unknown" as "adult" is how an infant was
+         offered honey and cough syrup. */
+      {
+        const na=narrativeAge(input);
+        if(na!==null && (S.ageMonths===null || Math.abs(na-S.ageMonths)>1)){
+          S.ageMonths=na; S.age=Math.floor(na/12); S.who="child";
+          await addBot(na<24 ? `Noted — this is about a ${Math.round(na)}-month-old, so I'll use the infant rules, not yours.`
+                             : `Noted — this is about a ${Math.floor(na/12)}-year-old, so I'll use the child's age for anything I suggest.`, 400);
+        } else if(mentionsChildNoAge(input) && (S.ageMonths===null || S.ageMonths>=216)){
+          await addBot("This sounds like it's about a child — how old are they? (months if under two)",400);
+          const ca=await askText("e.g. 10 months, or 4 years");
+          const g=parseAgeSex(ca); const cm=(g.months!==null&&g.months!==undefined)?g.months:narrativeAge(ca);
+          if(cm!==null && cm!==undefined){ S.ageMonths=cm; S.age=Math.floor(cm/12); S.who="child"; }
+        }
+      }
       /* The rules run first because they are instant and free, but they no longer
          END the consultation on their own. They can only RAISE an alarm, never
          suppress one, and never settle the label — measured over three fresh test
