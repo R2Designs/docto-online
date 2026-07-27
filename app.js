@@ -2,7 +2,7 @@
 "use strict";
 /* Keep in step with the ?v= token on the script tags in index.html. Shown in the
    footer, so a cached old build is visible instead of silently giving old advice. */
-const BUILD = 17;
+const BUILD = 18;
 window.DOCTO_BUILD = BUILD;
 const CONFIG = {
   GOOGLE_CLIENT_ID: (window.DOCTO_CONFIG && window.DOCTO_CONFIG.GOOGLE_CLIENT_ID) || "", // set this in config.js
@@ -289,6 +289,13 @@ function sinusPattern(low, dur){
                 || /\b(pain|pressure|heavy|heaviness)\b[^.]{0,20}\b(face|cheek|forehead|behind (?:my )?eyes?)\b/.test(low);
   if(!lingering && !unilateral && !purulent) return null;
   return {lingering, unilateral, purulent, days};
+}
+/* Alarm features present in the complaint, regardless of what it routed to.
+   Deliberately independent of the condition list: an alarm has to work when we
+   have no entry for the disease, because that is precisely when it is needed. */
+function alarmsIn(low){
+  const hay=typeof low==="string" ? (low.startsWith(" ")?low:" "+low.toLowerCase()+" ") : "";
+  return (DB.alarms||[]).filter(a => a.need.every(g => g.some(term => hay.includes(term))));
 }
 function keywordFlag(text){
   const low=scrubNegations(" "+text.toLowerCase()+" ");
@@ -1106,6 +1113,15 @@ async function assess(){
   const c=S.cond, conf=confidence();
   /* A refer-only condition still shows what to do meanwhile, but must lead with
      the fact that it needs a doctor — otherwise holding measures read as treatment. */
+  /* Alarm features outrank the plan. If one is present, the answer is "see a
+     doctor about this specifically" even when the complaint routed to something
+     ordinary — because the commonest way to under-triage is to name a benign
+     condition that genuinely fits and stop looking. */
+  S.alarms = alarmsIn(scrubNegations(" "+String(S.complaint||"").toLowerCase()+" "));
+  const alarmNote = S.alarms.length
+    ? `<div class="emg" style="text-align:left"><b>Before anything else — this needs a doctor, whatever else is going on:</b><ul style="margin:6px 0 0 16px">`
+      + S.alarms.map(a=>`<li style="margin:4px 0">${esc(a.why)}</li>`).join("") + `</ul></div>`
+    : "";
   const referNote = c.refer ? `<div class="referNote">${t("referNote")} <b>${esc(c.doctor||"")}</b></div>` : "";
   let html=sec("s-assess","activity",t("assess_title"))+`<div class="badges"><span class="badge prim">${t("likely")}: <b>${esc(c.nm)}</b></span><span class="badge">${t("confidence")}: ${esc(conf)}</span></div>`;
   if(S.temp>=103) html+=`<div class="emg">Temperature ${S.temp}°F is high — start the fever plan now and see a doctor today if it doesn't come down.</div>`;
@@ -1125,6 +1141,7 @@ async function assess(){
     html+=`<div class="emg" style="text-align:left"><b>Because this is a child (${_m<24?Math.round(_m)+" months":Math.floor(_m/12)+" years"}), these limits come first:</b><ul style="margin:6px 0 0 16px">`
       + bits.map(b=>`<li style="margin:4px 0">${b}</li>`).join("") + `</ul></div>`;
   }
+  html+=alarmNote;
   html+=referNote;
   // modern — for refer-only conditions these are holding measures, not treatment
   html+=sec("s-quick","zap", c.refer ? t("meanwhile_title") : t("quick_title"))+`<ul>`;

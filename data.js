@@ -34,6 +34,48 @@ redFlagKeywords: [
 
    Each rule fires only when EVERY group in `need` has at least one hit in the
    text. Several rules may share an id (different routes to the same emergency). */
+/* ---------- ALARM FEATURES ----------
+   Clinicians do not carry every rare disease in their head. They carry a short
+   list of FEATURES that mean "this is not a self-care problem", and they act on
+   those before they know the diagnosis. That is exactly the layer this app was
+   missing: myeloma, scleroderma, oesophageal cancer, akathisia and scarlet fever
+   were all under-triaged not because the routing was wrong but because the
+   disease was not in the catalogue at all, so a weak generic match won by
+   default and reassured the person.
+
+   An alarm does not name a disease. It says: whatever this is, it needs a
+   doctor, and here is the specific reason. That makes coverage independent of
+   how many diseases we have entries for — which is the only way a catalogue of
+   ~90 conditions can behave safely in a world with thousands. */
+alarms: [
+ {id:"alarm_weight_loss",
+  need:[["lost","losing","weight loss","lost weight","dropped","kg","pounds","pants are loose","clothes loose"],
+        ["unintentional","without trying","unexplained","not trying","no reason","despite","unintentionally"]],
+  why:"Unintended weight loss alongside another persistent symptom is one of the few findings that always needs investigating, whatever the rest of the picture looks like."},
+ {id:"alarm_dysphagia",
+  need:[["swallow","swallowing","food sticking","stuck in my chest","stuck going down","dysphagia"],
+        ["difficulty","difficult","struggling","hard to","trouble","cannot","can't","worse","progress","now liquids","solid"]],
+  why:"Difficulty swallowing that is getting worse — especially going from solids to liquids — needs an endoscopy. This is never a wait-and-see symptom."},
+ {id:"alarm_postmenopausal_bleed",
+  need:[["postmenopausal","post-menopausal","after menopause","since menopause","menopause"],
+        ["bleed","bleeding","spotting","spot","blood"]],
+  why:"Any bleeding after the menopause is treated as cancer of the womb lining until a scan and biopsy say otherwise. Most turn out benign — but the check is not optional, and it should happen within two weeks."},
+ {id:"alarm_new_drug",
+  need:[["started","начал","begun","began","new medicine","new medication","new tablet","after starting","put me on","prescribed"],
+        ["day","days","week","weeks","yesterday","recently"],
+        ["restless","cannot sit","can't sit still","pacing","twitch","stiff","rigid","rash","fever","confusion","tremor","shaking","muscle","swelling","cannot keep still"]],
+  why:"A new symptom appearing within days of starting a new medicine is a drug reaction until proven otherwise. The medicine may need stopping — but do not stop it on your own; ring the prescriber today."},
+ {id:"alarm_bone_pain_calcium",
+  need:[["bone pain","bones ache","bone ache","deep bone","fracture","fractures","broke a bone","back pain"],
+        ["calcium","high calcium","hypercalc","kidney","renal","anaemia","anemia","pale","tired"]],
+  why:"Bone pain or fractures happening too easily, together with a high calcium or kidney trouble, is a pattern that needs blood tests and imaging — it is how several treatable bone marrow conditions first show up."},
+ {id:"alarm_night_pain",
+  need:[["wakes me","wakes him","wakes her","at night","night pain","cannot sleep for the pain"],
+        ["bone","back","leg pain","deep pain","constant"],
+        ["weight","fever","night sweats","lump","numb","weak"]],
+  why:"Pain that wakes you from sleep, with weight loss, fever or night sweats, is the combination that always gets investigated rather than treated blindly."}
+],
+
 /* ---------- HALLMARK SIGNS ----------
    A hallmark is a finding that, on its own, changes what should happen next —
    the thing a clinician asks about precisely because the answer decides the
@@ -60,7 +102,11 @@ hallmarks: [
  {sign:/\b(cola|coke|tea)[- ]colou?red\b[^.]{0,30}\burine\b|\burine\b[^.]{0,30}\b(cola|coke|tea)[- ]colou?red\b|\b(dark red|brown)\b[^.]{0,20}\burine\b[^.]{0,60}\bno pain\b/i,
   flag:"haematuria_painless", why:"blood in urine without pain always needs investigating"},
  {sign:/\bsudden\b[^.]{0,40}\b(total|complete|all)\b[^.]{0,20}\bhearing loss\b|\bwoke up\b[^.]{0,40}\b(deaf|cannot hear|can'?t hear|no hearing)\b|\bhearing (?:has )?(?:gone|disappeared)\b[^.]{0,30}\bsudden/i,
-  flag:"sudden_hearing_loss", why:"sudden one-sided deafness has a 48-72 hour steroid window"}
+  flag:"sudden_hearing_loss", why:"sudden one-sided deafness has a 48-72 hour steroid window"},
+ /* Sandpaper texture is the one thing about a scarlet fever rash that nobody
+    describes about any other rash — a true pathognomonic sign. */
+ {sign:/\b(sandpaper|sand paper)\b|\brough\b[^.]{0,25}\brash\b[^.]{0,40}\bfeels like\b|\brash\b[^.]{0,30}\bfeels like (?:fine )?sandpaper\b/i,
+  cond:"strep_throat", why:"a rash that feels like sandpaper with a sore throat and fever is scarlet fever — it needs antibiotics to prevent rheumatic fever"}
 ],
 
 redFlagPatterns: [
