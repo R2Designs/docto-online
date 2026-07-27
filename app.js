@@ -2,7 +2,7 @@
 "use strict";
 /* Keep in step with the ?v= token on the script tags in index.html. Shown in the
    footer, so a cached old build is visible instead of silently giving old advice. */
-const BUILD = 13;
+const BUILD = 14;
 window.DOCTO_BUILD = BUILD;
 const CONFIG = {
   GOOGLE_CLIENT_ID: (window.DOCTO_CONFIG && window.DOCTO_CONFIG.GOOGLE_CLIENT_ID) || "", // set this in config.js
@@ -39,7 +39,7 @@ function sec(cls,name,title){ return '<h3 class="'+cls+'"><span class="hbadge">'
 /* ---------------- session state ---------------- */
 let S = null;
 function newSession(){
-  S = { step:"welcome", who:null, age:null, sex:null, preg:false, complaint:"", dur:null, sev:null,
+  S = { step:"welcome", who:null, age:null, ageMonths:null, sex:null, preg:false, complaint:"", dur:null, sev:null,
         temp:null, feverKind:null, pains:[], dqi:0, dqAnswers:[], allergies:[], allergyOther:"",
         conds:[], meds:"", cond:null, scores:{}, emergency:null, labFindings:null, labRaw:"",
         symptoms:[], extracted:[], llmHint:null,
@@ -150,15 +150,24 @@ function askText(ph, quick){
       if(wrap) wrap.querySelectorAll("button").forEach(b=>{ b.classList.add("done"); b.disabled=true; });
       pendingText=null; resetHint(); res(v); };
     if(quick && quick.length){
-      wrap=document.createElement("div"); wrap.className="row bot";
-      const inner=document.createElement("div"); inner.className="bub";
-      const av=document.createElement("div"); av.className="av"; av.innerHTML=BOT_AV;
       const box=document.createElement("div"); box.className="chips";
       quick.forEach(q=>{ const b=document.createElement("button"); b.className="chip"; b.textContent=q.label;
         b.onclick=()=>{ b.classList.add("sel"); addUser(q.label); finish(q.value); };
         box.appendChild(b); });
-      inner.appendChild(box); wrap.appendChild(av); wrap.appendChild(inner);
-      CHAT().appendChild(wrap); scroll_();
+      /* Shortcuts belong to the question, not to a message of their own. Giving
+         them their own avatar and bubble made a single "None" chip look like the
+         app had sent an empty message. Attach to the question just asked. */
+      const rows=CHAT().querySelectorAll(".row.bot");
+      const lastBub = rows.length ? rows[rows.length-1].querySelector(".bub") : null;
+      if(lastBub){ lastBub.appendChild(box); wrap=rows[rows.length-1]; }
+      else {
+        wrap=document.createElement("div"); wrap.className="row bot";
+        const inner=document.createElement("div"); inner.className="bub";
+        const av=document.createElement("div"); av.className="av"; av.innerHTML=BOT_AV;
+        inner.appendChild(box); wrap.appendChild(av); wrap.appendChild(inner);
+        CHAT().appendChild(wrap);
+      }
+      scroll_();
       inp.placeholder=t("hintTap");
     } else {
       inp.placeholder=ph||t("inputPh");
@@ -300,17 +309,44 @@ function keywordFlag(text){
    Returns nulls for whatever it couldn't read, so the flow can ask just that part. */
 function parseAgeSex(txt){
   const low=String(txt||"").toLowerCase();
-  let age=null, sex=null;
-  const am=/\b(\d{1,3})\b/.exec(low);
-  if(am){ const n=+am[1]; if(n>=0 && n<=120) age=n; }
+  let age=null, sex=null, months=null;
+  /* "10-month-old" must not become a 10-year-old. Reading the unit is the whole
+     safety story in paediatrics: honey, cough syrups and every mg/kg dose hinge
+     on it, and a bare number is silently interpreted as years. Months first. */
+  const mo=/\b(\d{1,3})\s*(?:-|\s)?\s*(month|months|mnth|mah[ie]ne|maheena|mahina)\b/.exec(low);
+  const wk=/\b(\d{1,3})\s*(?:-|\s)?\s*(week|weeks|hafte|hafta)\b/.exec(low);
+  const dy=/\b(\d{1,3})\s*(?:-|\s)?\s*(day|days|din)\s*(?:-|\s)?\s*old\b/.exec(low);
+  const yr=/\b(\d{1,3})\s*(?:-|\s)?\s*(year|years|yr|yrs|saal|sal|varsh|barah)\b/.exec(low);
+  if(dy)       months = +dy[1]/30;
+  else if(wk)  months = +wk[1]/4.345;
+  else if(mo)  months = +mo[1];
+  else if(yr)  months = +yr[1]*12;
+  else if(/\b(newborn|new born|navjat)\b/.test(low)) months=0.2;
+  else if(/\b(infant|baby|shishu)\b/.test(low) && !/\byear|saal\b/.test(low)) months=null; // unknown, but flag it
+  if(months!==null && months<=1440){ age=Math.floor(months/12); }
+  else {
+    const am=/\b(\d{1,3})\b/.exec(low);
+    if(am){ const n=+am[1]; if(n>=0 && n<=120) age=n; }
+  }
   const male   =/(^|[^a-z])(m|male|man|boy|मेल|पुरुष|लड़का|aadmi|ladka|ஆண்|పురుషుడు|പുരുഷൻ)([^a-z]|$)/;
   const female =/(^|[^a-z])(f|female|woman|girl|lady|फीमेल|महिला|स्त्री|औरत|लड़की|aurat|ladki|பெண்|స్త్రీ|സ്ത്രീ)([^a-z]|$)/;
   const other  =/(^|[^a-z])(o|other|trans|non.?binary|अन्य|மற்ற|ఇతర|മറ്റ്)([^a-z]|$)/;
   if(female.test(low))      sex="F";     // test female first: "female" contains "male"
   else if(male.test(low))   sex="M";
   else if(other.test(low))  sex="O";
-  return {age, sex};
+  return {age, sex, months};
 }
+
+/* One canonical age in months for every safety decision. Returns null when we
+   simply do not know — and "unknown" must behave like "could be an infant"
+   wherever a paediatric contraindication exists. */
+function ageMonths(){
+  if(S && S.ageMonths!==null && S.ageMonths!==undefined) return S.ageMonths;
+  if(S && typeof S.age==="number") return S.age*12;
+  return null;
+}
+function isInfant(){ const m=ageMonths(); return m!==null && m<12; }
+function isUnderFour(){ const m=ageMonths(); return m!==null && m<48; }
 
 /* Numbers people quote in passing are often the most important thing they've said.
    "my cuff reads 195/115" is a hypertensive emergency whatever they think it is. */
@@ -594,8 +630,63 @@ function confidence(){
 }
 
 /* ---------------- personalisation filters ---------------- */
+/* ---------------- paediatric safety gate ----------------
+   Age was captured but never used to filter a single medicine, so a 10-month-old
+   was being offered honey (infant botulism), dextromethorphan and guaifenesin
+   (no proven benefit, real harm, banned in this age group), and adult doses.
+   These are hard blocks, not warnings: text a parent can read past is not a
+   safeguard. Screened by SUBSTANCE, so it holds for the Ayurvedic list too —
+   honey is honey whichever section of the page it appears in. */
+const PEDS_RULES=[
+  { maxMonths:12, test:/\bhoney\b|\bshahad\b|\bmadhu\b/i,
+    why:"honey is never safe under 1 year — risk of infant botulism" },
+  { maxMonths:48, test:/dextromethorphan|guaifenesin|cough syrup|bromhexine|codeine|pholcodine|expectorant|chlorphenir|cetirizine syrup|antihistamine/i,
+    why:"cough and cold syrups are not to be given under 4 years — no benefit, and real risk" },
+  { maxMonths:6,  test:/\bibuprofen\b|\bnsaid\b|\bnimesulide\b|\bdiclofenac\b|\bmefenamic\b/i,
+    why:"ibuprofen and similar painkillers are avoided under 6 months" },
+  { maxMonths:192, test:/\baspirin\b|acetylsalicylic/i,
+    why:"aspirin is never given under 16 — risk of Reye's syndrome" },
+  { maxMonths:24, test:/\bnimesulide\b/i, why:"nimesulide is not for children" },
+  { maxMonths:60, test:/oxymetazoline|xylometazoline|nasal decongestant drop|phenylephrine|pseudoephedrine/i,
+    why:"decongestant drops and tablets are avoided in young children" },
+  { maxMonths:12, test:/\bsteam inhalation\b|\bsteam\b/i,
+    why:"steam inhalation is a scald risk in a baby — use a humid room instead, never a bowl of hot water" },
+  { maxMonths:24, test:/\bgargle\b|\bgargling\b|\blozenge\b|salt water gargle/i,
+    why:"a toddler cannot gargle safely, and lozenges are a choking risk" },
+  { maxMonths:12, test:/\bpepper\b|\btrikatu\b|\bpippali\b|\bginger juice\b|\brock candy\b|\bmishri\b|\bghee paste\b|churna|kadha|\bkwath\b|arishta|asava|guggulu|\bchyawanprash\b/i,
+    why:"classical churnas, kadhas and pepper preparations are not for infants — an Ayurvedic paediatrician must dose these" },
+  { maxMonths:6,  test:/\bwater\b.{0,20}\b(sip|drink|give|offer)\b|\bORS\b.{0,30}\bhome\b|\bjaggery\b|\bcow'?s milk\b|\bsugar water\b/i,
+    why:"under 6 months nothing but breast milk or formula unless a doctor says otherwise" },
+  /* Any fixed millilitre or teaspoon dose is an adult dose unless it says otherwise.
+     Handing a parent "10 ml twice daily" for a baby is the same error as the
+     syrups above, just wearing a herbal label. */
+  { maxMonths:24, test:/\b\d+\s*(ml|tsp|teaspoon|tablespoon|tbsp)\b/i,
+    why:"this is an adult measure — a child's dose must be worked out by weight with a paediatrician" }
+];
+/* Warnings, not blocks: the advice stands but must not be read as an adult dose. */
+const PEDS_WARN=[
+  { maxMonths:216, test:/paracetamol|acetaminophen|crocin|calpol|dolo/i,
+    why:"for a child, paracetamol is 15 mg per kg per dose, max 4 doses in 24 hours — get your pharmacist to convert that to millilitres for your child's weight" },
+  { maxMonths:216, test:/\bibuprofen\b|\bbrufen\b|\bcombiflam\b/i,
+    why:"for a child, ibuprofen is 10 mg per kg per dose and only if they are drinking well — confirm the millilitres with your pharmacist" }
+];
+/* Returns {ok, why} — same shape as medAllowed, so callers need no special case. */
+function pedsCheck(text){
+  const m=ageMonths();
+  if(m===null || m>=216) return {ok:true, why:null};    // adult, or age unknown
+  for(const r of PEDS_RULES){
+    if(m < r.maxMonths && r.test.test(text)) return {ok:false, why:r.why};
+  }
+  for(const r of PEDS_WARN){
+    if(m < r.maxMonths && r.test.test(text)) return {ok:true, why:r.why};
+  }
+  return {ok:true, why:null};
+}
 function medAllowed(item){
   const f=item.f||"";
+  // age first: a paediatric contraindication outranks every other consideration
+  const peds=pedsCheck(item.t||"");
+  if(!peds.ok) return peds;
   if(S.preg){ if(f==="nsaid"||f==="decong"||f==="lax_stim") return {ok:false, why:"avoided in pregnancy"}; }
   if(S.allergies.includes("nsaid") && f==="nsaid") return {ok:false, why:"you reported painkiller (NSAID) allergy"};
   if(S.conds.includes("ulcer") && f==="nsaid") return {ok:false, why:"avoided with stomach ulcer — use paracetamol instead"};
@@ -895,6 +986,22 @@ async function assess(){
   const referNote = c.refer ? `<div class="referNote">${t("referNote")} <b>${esc(c.doctor||"")}</b></div>` : "";
   let html=sec("s-assess","activity",t("assess_title"))+`<div class="badges"><span class="badge prim">${t("likely")}: <b>${esc(c.nm)}</b></span><span class="badge">${t("confidence")}: ${esc(conf)}</span></div>`;
   if(S.temp>=103) html+=`<div class="emg">Temperature ${S.temp}°F is high — start the fever plan now and see a doctor today if it doesn't come down.</div>`;
+  /* Lead with the paediatric rules rather than burying them in a parenthesis.
+     A parent scanning a list will act on the first concrete instruction they
+     see; the safety limits have to arrive before the remedies do. */
+  const _m=ageMonths();
+  if(_m!==null && _m<216){
+    const bits=[];
+    if(_m<12) bits.push("<b>No honey at all under 1 year</b> — it can cause infant botulism, whatever the remedy says.");
+    if(_m<48) bits.push("<b>No cough or cold syrup under 4 years</b> — dextromethorphan, guaifenesin and antihistamine syrups have no proven benefit at this age and carry real risk.");
+    if(_m<192) bits.push("<b>Never aspirin under 16</b> (Reye's syndrome).");
+    if(_m<6) bits.push("<b>Under 6 months:</b> no ibuprofen, and nothing by mouth except breast milk or formula unless a doctor says otherwise.");
+    bits.push("<b>Doses are by weight, not age.</b> Paracetamol and ibuprofen for children are measured in mg per kg — ask your pharmacist or paediatrician to work out the millilitres for your child's current weight, and write it down. Never scale an adult dose.");
+    if(_m<3) bits.push("<b>Any fever under 3 months is an emergency</b> — go to a doctor now, even if the baby seems comfortable.");
+    else if(_m<6 && S.temp>=100.4) bits.push("<b>Fever under 6 months should be seen the same day.</b>");
+    html+=`<div class="emg" style="text-align:left"><b>Because this is a child (${_m<24?Math.round(_m)+" months":Math.floor(_m/12)+" years"}), these limits come first:</b><ul style="margin:6px 0 0 16px">`
+      + bits.map(b=>`<li style="margin:4px 0">${b}</li>`).join("") + `</ul></div>`;
+  }
   html+=referNote;
   // modern — for refer-only conditions these are holding measures, not treatment
   html+=sec("s-quick","zap", c.refer ? t("meanwhile_title") : t("quick_title"))+`<ul>`;
@@ -902,8 +1009,14 @@ async function assess(){
     if(chk.ok){ html+=`<li>${esc(m.t)}${chk.why?` <i style="color:#a65c00">(${esc(chk.why)})</i>`:""}</li>`; }
     else html+=`<li style="color:#8a8a8a;text-decoration:line-through">${esc(m.t)}</li><li style="color:#a65c00">↳ Skipped: ${esc(chk.why)}.</li>`; });
   html+=`</ul>`;
-  // ayurveda
-  html+=sec("s-ayur","leaf",t("ayur_title"))+`<ul>`; c.ayur.forEach(a=>html+=`<li>${esc(a)}</li>`); html+=`</ul>`;
+  // ayurveda — screened by the SAME paediatric gate; it was previously unfiltered,
+  // which is how honey kept being recommended to an infant on the same page that
+  // correctly refused it two sections above.
+  html+=sec("s-ayur","leaf",t("ayur_title"))+`<ul>`;
+  c.ayur.forEach(a=>{ const chk=pedsCheck(a);
+    if(chk.ok) html+=`<li>${esc(a)}</li>`;
+    else html+=`<li style="color:#8a8a8a;text-decoration:line-through">${esc(a)}</li><li style="color:#a65c00">↳ Skipped: ${esc(chk.why)}.</li>`; });
+  html+=`</ul>`;
   // personal notes
   const pn=personalNotes(); if(pn.length){ html+=`<ul>`; pn.forEach(n=>html+=`<li><i>${esc(n)}</i></li>`); html+=`</ul>`; }
   // tests
@@ -1072,7 +1185,26 @@ async function startConsult(){
   const av=await askText(t("agesex_ph"));
   const got=parseAgeSex(av);
   S.age=got.age; S.sex=got.sex;
-  if(!S.age){ const a2=await askText(t("age_ph")); S.age=parseInt(a2)||null; }
+  /* Keep months, not just years. "10 months" and "10 years" are the same number
+     and completely different medicine. */
+  S.ageMonths = (got.months!==null && got.months!==undefined) ? got.months
+              : (typeof got.age==="number" ? got.age*12 : null);
+  if(S.age===null || S.age===undefined){
+    const a2=await askText(t("age_ph"));
+    const g2=parseAgeSex(a2); S.age=g2.age;
+    S.ageMonths = (g2.months!==null && g2.months!==undefined) ? g2.months
+                : (typeof g2.age==="number" ? g2.age*12 : null);
+  }
+  /* Under two, ask for the exact age in months — every dose below this age is
+     weight- and month-based, and guessing is how children get hurt. */
+  if(S.ageMonths!==null && S.ageMonths<24){
+    await addBot("Just to be safe with a little one — how many months old exactly?",400);
+    const mm=await askText("e.g. 10 months");
+    const gm=parseAgeSex(mm);
+    if(gm.months!==null && gm.months!==undefined) S.ageMonths=gm.months;
+    else { const n=parseFloat(mm); if(Number.isFinite(n) && n>=0 && n<=36) S.ageMonths=n; }
+    S.age=Math.floor(S.ageMonths/12);
+  }
   if(!S.sex){ const sx=await chips([t("sex_m"),t("sex_f"),t("sex_o")]); S.sex=["M","F","O"][sx.idx]; }
   if(S.sex==="F" && S.age && S.age>=12 && S.age<=55){
     await addBot(t("q_preg"),400); const p=await chips([t("yes"),t("no")]); S.preg=p.idx===0; }
