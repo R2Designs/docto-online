@@ -34,6 +34,42 @@ redFlagKeywords: [
 
    Each rule fires only when EVERY group in `need` has at least one hit in the
    text. Several rules may share an id (different routes to the same emergency). */
+/* ---------- INDIAN BRAND NAMES ----------
+   Nobody in India says "I take acenocoumarol". They say Acitrom. Nobody says
+   ibuprofen — they say Flexon, Brufen, Combiflam. Every interaction rule and
+   every safety gate in this app matches on generic names, so a chemist handing
+   over Flexon MR to a man on Acitrom sailed straight through a gate built
+   precisely to catch that. Brand names are not a nicety here; for the people
+   this app is for they are the ONLY names.
+   Expanded into the text before any matching, so every layer benefits at once. */
+brands: [
+ [/\bacitrom\b|\bacenocoumarol\b|\bnicoumalone\b/ig, "acenocoumarol warfarin anticoagulant"],
+ [/\bflexon\b|\bflexon\s*mr\b/ig,                    "ibuprofen paracetamol nsaid"],
+ [/\bcombiflam\b/ig,                                 "ibuprofen paracetamol nsaid"],
+ [/\bbrufen\b|\bibugesic\b/ig,                       "ibuprofen nsaid"],
+ [/\bvoveran\b|\bdiclomol\b|\bdynapar\b/ig,          "diclofenac nsaid"],
+ [/\bnise\b|\bnimulid\b|\bnimek\b/ig,                "nimesulide nsaid"],
+ [/\bnaprosyn\b/ig,                                  "naproxen nsaid"],
+ [/\bdisprin\b|\becosprin\b|\baspirin\b/ig,          "aspirin nsaid antiplatelet"],
+ [/\bcrocin\b|\bdolo\s*650\b|\bdolo\b|\bcalpol\b|\bmetacin\b/ig, "paracetamol"],
+ [/\bpan\s*40\b|\bpantop\b|\bpantocid\b/ig,          "pantoprazole"],
+ [/\bomez\b/ig,                                      "omeprazole"],
+ [/\bmetlar\b|\bglycomet\b|\bglyciphage\b/ig,        "metformin"],
+ [/\bamlokind\b|\bamlodac\b|\bstamlo\b/ig,           "amlodipine"],
+ [/\btelma\b|\btelvas\b/ig,                          "telmisartan arb"],
+ [/\benvas\b|\bcardace\b/ig,                         "ramipril enalapril acei"],
+ [/\blasix\b|\bdytor\b/ig,                           "furosemide torsemide diuretic"],
+ [/\bclopilet\b|\bdeplatt\b|\bplavix\b/ig,           "clopidogrel antiplatelet"],
+ [/\bthyronorm\b|\beltroxin\b/ig,                    "thyroxine levothyroxine"],
+ [/\bmontek\b|\bmontair\b/ig,                        "montelukast"],
+ [/\bcetzine\b|\balerid\b|\bokacet\b/ig,             "cetirizine antihistamine"],
+ [/\bavil\b/ig,                                      "pheniramine antihistamine"],
+ [/\bcorex\b|\bphensedyl\b/ig,                       "codeine cough syrup"],
+ [/\bzerodol\b/ig,                                   "aceclofenac nsaid"],
+ [/\bsaridon\b|\banacin\b/ig,                        "paracetamol caffeine"],
+ [/\bwysolone\b|\bomnacortil\b/ig,                   "prednisolone steroid"]
+],
+
 /* ---------- DRUG INTERACTIONS ----------
    The app asked "any medicines you take regularly?" from day one and then never
    used the answer for anything except printing it in the report. So a man on
@@ -634,6 +670,19 @@ redFlagPatterns: [
     textbook case to the jaw-joint self-care plan; untreated GCA blinds people
     within days, so the vocabulary here is deliberately wide and the age
     threshold does the work of keeping it specific. */
+ /* Bleeding signs in somebody on a blood thinner. Bruising without injury,
+    blood in the urine, black stools or bleeding gums mean the anticoagulation
+    has gone too far — and in a mechanical heart valve the answer is never
+    "stop it for a few days", because that risks valve thrombosis and stroke.
+    This needs an INR today, not a decision made at home. */
+ {id:"anticoag_bleed", need:[
+   ["warfarin","acitrom","acenocoumarol","nicoumalone","blood thinner","anticoagulant",
+    "apixaban","rivaroxaban","dabigatran","eliquis","xarelto","clopidogrel","antiplatelet"],
+   ["bruis","bruise","bruises","black stool","tarry","blood in urine","brownish urine","reddish urine",
+    "red urine","cola urine","bleeding gums","gums bleed","nose bleed","nosebleed","blood in vomit",
+    "coughing blood","heavy bleeding","bleeding a lot","inr"]
+ ]},
+
  {id:"temporal_arteritis", minAge:50, need:[
    ["temple","temporal","side of my head","side of head","scalp","one side of my head"]
  ], any:[
@@ -709,6 +758,7 @@ redFlagPatterns: [
  ]}
 ],
 emergencyAdvice: {
+ anticoag_bleed:"Bruising without an injury, blood in the urine, black stools or bleeding gums while you are on a blood thinner means the blood is too thin right now. Go to a hospital today for an urgent INR and blood count — this is not something to judge at home. Do NOT stop the blood thinner on your own: if you have a mechanical heart valve or atrial fibrillation, stopping it risks a clot or stroke, and the dose needs adjusting by the doctor who manages it, not skipping. Take no painkiller except paracetamol on the way, and bring every medicine and herbal preparation you have taken in the last week, including home remedies — turmeric, ginger, papaya leaf, garlic and guggulu all thin the blood further.",
 /* ---- Conditions selected for TIME-CRITICALITY, not prevalence ----
    The catalogue was built from India primary-care frequency data, which is the
    right way to decide what to treat but the wrong way to decide what to

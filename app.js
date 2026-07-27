@@ -2,7 +2,7 @@
 "use strict";
 /* Keep in step with the ?v= token on the script tags in index.html. Shown in the
    footer, so a cached old build is visible instead of silently giving old advice. */
-const BUILD = 20;
+const BUILD = 21;
 window.DOCTO_BUILD = BUILD;
 const CONFIG = {
   GOOGLE_CLIENT_ID: (window.DOCTO_CONFIG && window.DOCTO_CONFIG.GOOGLE_CLIENT_ID) || "", // set this in config.js
@@ -215,6 +215,14 @@ const NEG_SYMPTOMS="fever|chest pain|chest tightness|chest discomfort|blood|blee
   "rash|headache|dizziness|dizzy|lightheaded|fainting|faint|sweating|sweats|clammy|palpitations|"+
   "stiff neck|jaundice|yellowing|weight loss|incontinence|diarrhea|discharge|"+
   "redness|spreading redness|red streaks|streaks|tobacco|gutkha|floaters|flashes|lip swelling|face swelling|throat swelling|wheeze|wheezing|itching|lumps|black stools|black stool|blood in stool|blood in my stool|bloody stools|saddle numbness|bladder problems|bowel problems|leg weakness|red streaks|night sweats|weight loss|other symptoms|sudden changes|blood in|self harm|self-harm|suicidal thoughts|thoughts of harming";
+/* Expand Indian brand names to their generics before anything is matched, so
+   every layer — flags, interactions, alarms, peds gate — sees "ibuprofen" when
+   the person wrote "Flexon MR". */
+function expandBrands(s){
+  let out=String(s||"");
+  (DB.brands||[]).forEach(([re,generic])=>{ out=out.replace(re, m=>m+" "+generic); });
+  return out;
+}
 function scrubNegations(low){
   /* Denials usually come as a list — "no hearing loss, weakness, or slurred
      speech" — so once a denial starts, keep consuming the comma-separated items.
@@ -297,8 +305,35 @@ function alarmsIn(low){
   const hay=typeof low==="string" ? (low.startsWith(" ")?low:" "+low.toLowerCase()+" ") : "";
   return (DB.alarms||[]).filter(a => a.need.every(g => g.some(term => hay.includes(term))));
 }
+/* Is this flag even POSSIBLE for what the person described?
+
+   Local anaesthetic toxicity requires a local anaesthetic. Rabies risk requires
+   an animal. Carbon monoxide requires a fuel source. When a rule exists for a
+   flag, its first `need` group is exactly that defining exposure — and we were
+   only ever using it to decide whether the RULES should fire, never to sanity-
+   check what the READER proposed. So the reader could name a flag out of the
+   list and the app would print its detailed, confident, entirely wrong
+   instructions: "tell the person who gave the injection" to someone who had no
+   injection.
+
+   Rejecting an implausible flag does NOT cancel the emergency. It falls back to
+   the rules, or to the generic "this needs a hospital now" with the reader's own
+   reason quoted. Losing the wrong specifics is the whole point — the escalation
+   survives, the fabricated detail does not. */
+function flagPlausible(id, low){
+  const rules=(DB.redFlagPatterns||[]).filter(r=>r.id===id);
+  if(!rules.length) return true;              // no rule to check against
+  const has = term => term.charAt(0)==="~" ? new RegExp(term.slice(1)).test(low) : low.includes(term);
+  // plausible if ANY rule for this id has its defining (first) group satisfied
+  return rules.some(r=>{
+    const g=(r.need||[])[0];
+    if(!g || !g.length) return true;
+    if(g.some(has)) return true;
+    return (r.any||[]).some(has);             // an `any` hallmark counts as evidence too
+  });
+}
 function keywordFlag(text){
-  const low=scrubNegations(" "+text.toLowerCase()+" ");
+  const low=scrubNegations(" "+expandBrands(String(text)).toLowerCase()+" ");
   /* Gather every candidate — patterns, quoted vital signs, plain keywords — then
      let clinical precedence decide, rather than whichever rule happened to run first. */
   let candidates=patternFlags(low);
@@ -506,6 +541,7 @@ const FLAG_PRIORITY=[
   // a named drug or named diagnosis beats the generic syndrome that shares its signs:
   // an MAOI reaction needs MAOI handling, not just "your BP is high"
   "maoi_crisis","serotonin_syndrome","nms","thyroid_storm","lithium_tox","digoxin_tox","paracetamol_od",
+  "anticoag_bleed",
   "ludwig","epiglottitis","breathing","adrenal_crisis",
   "hypertensive_crisis","dvt_pe","cardiac",
   "tia","stroke","head_injury","headache_worst","meningococcal","meningitis","sepsis","neutropenic_fever",
@@ -822,7 +858,7 @@ function patientDrugs(){
     if(S.complaint) parts.push(String(S.complaint));
     if(Array.isArray(S.conds)) parts.push(S.conds.join(" "));
   }
-  return " "+parts.join(" ").toLowerCase()+" ";
+  return " "+expandBrands(parts.join(" ")).toLowerCase()+" ";
 }
 /* Would this suggestion clash with what they are already on? Same {ok,why}
    shape as pedsCheck, so it screens the Ayurvedic list identically. */
@@ -1200,7 +1236,7 @@ async function assess(){
      doctor about this specifically" even when the complaint routed to something
      ordinary — because the commonest way to under-triage is to name a benign
      condition that genuinely fits and stop looking. */
-  S.alarms = alarmsIn(scrubNegations(" "+String(S.complaint||"").toLowerCase()+" "))
+  S.alarms = alarmsIn(scrubNegations(" "+expandBrands(String(S.complaint||"")).toLowerCase()+" "))
              .concat(medAlarmsIn());
   const alarmNote = S.alarms.length
     ? `<div class="emg" style="text-align:left"><b>Before anything else — this needs a doctor, whatever else is going on:</b><ul style="margin:6px 0 0 16px">`
@@ -1331,6 +1367,10 @@ async function flow(input){
         // the model over-calls the same handful of alarms; the same guards apply to it
         let guarded=false;
         if(readerFlag && guardDrops(readerFlag, lowIn)){ readerFlag=null; guarded=true; }
+        /* Reject a flag whose defining trigger is nowhere in the complaint. The
+           person still gets escalated — just without invented specifics. */
+        let implausible=null;
+        if(readerFlag && !flagPlausible(readerFlag, lowIn)){ implausible=readerFlag; readerFlag=null; }
         const finalFlag  = readerFlag || ruleFlag;
         if(finalFlag){
           S.flagSource = readerFlag ? (ruleFlag && ruleFlag!==readerFlag ? "reader-relabelled" : "reader")
@@ -1343,6 +1383,10 @@ async function flow(input){
         /* If a guard just removed the flag, the same reasoning removes the blanket
            "emergency" that came with it — but only when we can hand the person a
            real condition instead. With nothing to route to, we still stop. */
+        /* An implausible flag still means the reader thought this was an
+           emergency — honour that, but say so generically rather than with
+           somebody else's disease's instructions. */
+        if(implausible){ await emergencyStop("unspecified", ex.emergency_reason||""); return; }
         if(ex.emergency && !(guarded && ex.id && DB.conds.find(c=>c.id===ex.id))){
           await emergencyStop("unspecified", ex.emergency_reason); return;
         }
