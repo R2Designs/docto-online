@@ -2,7 +2,7 @@
 "use strict";
 /* Keep in step with the ?v= token on the script tags in index.html. Shown in the
    footer, so a cached old build is visible instead of silently giving old advice. */
-const BUILD = 19;
+const BUILD = 20;
 window.DOCTO_BUILD = BUILD;
 const CONFIG = {
   GOOGLE_CLIENT_ID: (window.DOCTO_CONFIG && window.DOCTO_CONFIG.GOOGLE_CLIENT_ID) || "", // set this in config.js
@@ -938,6 +938,59 @@ function relevantFlags(text, limit=30){
   return out.slice(0,limit);
 }
 
+/* ---------------- safety review of our own output ----------------
+   Every guard in this app is a hazard somebody thought of in advance. The honey
+   block exists because honey was noticed; the warfarin gate exists because
+   warfarin was noticed. That approach cannot catch what nobody anticipated.
+
+   So once the plan is assembled we hand it back to the reader with the patient's
+   details and ask the one question the pipeline never asked: is any of this
+   unsafe for THIS person? The reviewer can only strike lines out or raise
+   urgency — it can never add a treatment — so a wrong answer makes the app more
+   cautious, never less, and a missing answer changes nothing. */
+function reviewProfile(){
+  const bits=[];
+  const m=ageMonths();
+  if(m!==null) bits.push(m<24 ? Math.round(m)+" months old" : Math.floor(m/12)+" years old");
+  if(S.sex) bits.push({M:"male",F:"female",O:""}[S.sex]||"");
+  if(S.preg) bits.push("PREGNANT");
+  if(S.conds && S.conds.length) bits.push("conditions: "+S.conds.join(", "));
+  if(S.allergies && S.allergies.length) bits.push("allergic to: "+S.allergies.join(", "));
+  if(S.meds) bits.push("takes: "+String(S.meds).slice(0,120));
+  if(S.temp) bits.push("temp "+S.temp+"F");
+  return bits.filter(Boolean).join("; ");
+}
+/* Only worth a call when there is something to get wrong. Roughly a third of
+   consultations — a healthy adult being told to gargle needs no review. */
+function reviewWorthIt(lines){
+  const m=ageMonths();
+  const risky = (m!==null && (m<216 || m>=780))            // child, or 65+
+    || S.preg
+    || (S.conds && S.conds.length)
+    || (S.allergies && S.allergies.length)
+    || (S.meds && String(S.meds).trim().length>2);
+  if(!risky) return false;
+  // and only if the plan actually tells them to take or apply something
+  return lines.some(l=>/\b(mg|ml|tablet|tsp|tablespoon|syrup|gel|drop|spray|churna|guggulu|kwath|taila|oil|paste|honey|capsule|take|apply|inhale)\b/i.test(l));
+}
+async function safetyReview(lines){
+  if(!CONFIG.LLM_ENDPOINT || !lines.length) return null;
+  if(!reviewWorthIt(lines)) return null;
+  try{
+    const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(), 7000);
+    const resp=await fetch(CONFIG.LLM_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ mode:"review", text:String(S.complaint||"").slice(0,600),
+                            conds:lines.slice(0,40), areas:reviewProfile(), flags:[] }),
+      signal:ctrl.signal});
+    clearTimeout(to);
+    if(!resp.ok) return null;
+    const j=await resp.json();
+    // an older worker answers in the classify shape; treat that as "no review"
+    if(!j || j.mode!=="review" || !Array.isArray(j.unsafe)) return null;
+    return j;
+  }catch(e){ return null; }   // offline, slow, or unsupported — the local guards still stand
+}
+
 async function llmExtract(text){
   /* Only worth a call when there's actually prose to read. "fever since yesterday"
      tells the rule engine everything already, so paying to parse it is waste. */
@@ -1174,19 +1227,37 @@ async function assess(){
   }
   html+=alarmNote;
   html+=referNote;
+
+  /* Assemble the plan first, then have it reviewed as a whole. The lines are
+     numbered across BOTH paradigms so the reviewer sees the page the patient
+     sees — an interaction between an allopathic line and a herbal one is
+     invisible if each list is checked separately. */
+  const modernKeep = c.modern.filter(m=>medAllowed(m).ok);
+  const ayurKeep   = c.ayur.filter(a=>pedsCheck(a).ok && interactionCheck(a).ok);
+  const planLines  = modernKeep.map(m=>m.t).concat(ayurKeep);
+  const rev = await safetyReview(planLines);
+  const flagged = {};                       // line text -> reviewer's reason
+  if(rev){ rev.unsafe.forEach(u=>{ const txt=planLines[u.n-1]; if(txt) flagged[txt]=u.why; }); }
+  if(rev && rev.escalate && rev.escalate_why){
+    html+=`<div class="emg" style="text-align:left"><b>On a second look at this plan:</b> ${esc(rev.escalate_why)}</div>`;
+  }
+  const reviewNote = w => `<li style="color:#a65c00">↳ Held back on review: ${esc(w)}</li>`;
+
   // modern — for refer-only conditions these are holding measures, not treatment
   html+=sec("s-quick","zap", c.refer ? t("meanwhile_title") : t("quick_title"))+`<ul>`;
   c.modern.forEach(m=>{ const chk=medAllowed(m);
-    if(chk.ok){ html+=`<li>${esc(m.t)}${chk.why?` <i style="color:#a65c00">(${esc(chk.why)})</i>`:""}</li>`; }
-    else html+=`<li style="color:#8a8a8a;text-decoration:line-through">${esc(m.t)}</li><li style="color:#a65c00">↳ Skipped: ${esc(chk.why)}.</li>`; });
+    if(!chk.ok){ html+=`<li style="color:#8a8a8a;text-decoration:line-through">${esc(m.t)}</li><li style="color:#a65c00">↳ Skipped: ${esc(chk.why)}.</li>`; return; }
+    if(flagged[m.t]){ html+=`<li style="color:#8a8a8a;text-decoration:line-through">${esc(m.t)}</li>`+reviewNote(flagged[m.t]); return; }
+    html+=`<li>${esc(m.t)}${chk.why?` <i style="color:#a65c00">(${esc(chk.why)})</i>`:""}</li>`; });
   html+=`</ul>`;
   // ayurveda — screened by the SAME paediatric gate; it was previously unfiltered,
   // which is how honey kept being recommended to an infant on the same page that
   // correctly refused it two sections above.
   html+=sec("s-ayur","leaf",t("ayur_title"))+`<ul>`;
   c.ayur.forEach(a=>{ let chk=pedsCheck(a); if(chk.ok) chk=interactionCheck(a);
-    if(chk.ok) html+=`<li>${esc(a)}</li>`;
-    else html+=`<li style="color:#8a8a8a;text-decoration:line-through">${esc(a)}</li><li style="color:#a65c00">↳ Skipped: ${esc(chk.why)}.</li>`; });
+    if(!chk.ok){ html+=`<li style="color:#8a8a8a;text-decoration:line-through">${esc(a)}</li><li style="color:#a65c00">↳ Skipped: ${esc(chk.why)}.</li>`; return; }
+    if(flagged[a]){ html+=`<li style="color:#8a8a8a;text-decoration:line-through">${esc(a)}</li>`+reviewNote(flagged[a]); return; }
+    html+=`<li>${esc(a)}</li>`; });
   html+=`</ul>`;
   // personal notes
   const pn=personalNotes(); if(pn.length){ html+=`<ul>`; pn.forEach(n=>html+=`<li><i>${esc(n)}</i></li>`); html+=`</ul>`; }

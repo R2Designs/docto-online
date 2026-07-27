@@ -98,13 +98,37 @@ export default {
       const flagList = Array.isArray(flags) ? flags.slice(0, 60).join(", ") : "";
       const areaList = Array.isArray(areas) ? areas.slice(0, 20).join(", ") : "";
       const extract  = mode === "extract";
+      const review   = mode === "review";
 
       /* Two modes:
          - classify (default): just pick a condition id / red flag.
          - extract: also pull the clinical detail the user already volunteered, so
            the app can skip questions it has answers to. Still a reader, not a doctor —
            it reports what was said; it never decides treatment. */
-      const system = extract ?
+      /* Mode 3 — REVIEW. Everything else in this worker reads the patient's
+         complaint. This one reads OUR OUTPUT and asks the only question the
+         rest of the system was never asked: is this advice safe for THIS person?
+
+         It matters because every safety layer in the app is something a human
+         thought of in advance — the honey block exists because someone noticed
+         honey. A reviewer looking at the finished plan can catch hazards nobody
+         encoded. It only ever REMOVES advice or raises urgency; it can never add
+         a treatment, so a wrong answer here makes the app more cautious, never
+         less. */
+      const system = review ?
+`You are a clinical pharmacist reviewing advice a health app is about to show a patient.
+You do NOT write advice. You only find lines that are unsafe FOR THIS PATIENT.
+
+Judge each numbered line against the patient profile. Mark a line unsafe only when giving it to THIS patient could cause harm — a contraindication, a dangerous interaction with what they already take, a wrong dose for their age or organ function, or advice that would delay urgent care.
+
+Common traps worth checking: honey under 1 year; cough/cold syrups under 4; aspirin under 16; NSAIDs with anticoagulants, kidney disease, ulcer or heart failure; herbs that thin blood (guggulu, turmeric, garlic, ginkgo, fenugreek) with anticoagulants; St John's Wort with almost anything; adult millilitre doses given to a child; sedatives in the elderly; anything applied hot to numb feet; advice that assumes the wrong body part.
+
+Reply ONLY: {"unsafe":[{"n":<line number>,"why":"<short plain reason for the patient>"}],"escalate":<true|false>,"escalate_why":"<one clause, empty if false>"}
+- "why" is read by the patient. Plain words, under 25 words, no jargon.
+- escalate true only if the profile plus complaint means they need a doctor sooner than this advice implies.
+- If nothing is unsafe, reply {"unsafe":[],"escalate":false,"escalate_why":""}.
+- Never invent a treatment. Never add a line. Only flag what is listed.` :
+      extract ?
 `Clinical intake READER. Extract only what the patient stated. No advice, no invention.
 conds (id=name, with patient-wording cues in brackets): ${condList}
 flags: ${flagList}
@@ -132,8 +156,12 @@ Rules:
 - Otherwise pick the single best condition id, or "none" if nothing fits.
 - Reply with ONLY this JSON, no prose: {"id":"...","red_flag":"..."}`;
 
-      const user =
-`Complaint (may be Hindi/Hinglish/Tamil/Telugu/Malayalam/English): "${text.replace(/"/g, "'")}"`;
+      const user = review
+? `PATIENT: ${String(areas||[]).toString().replace(/"/g,"'")}
+COMPLAINT: "${text.replace(/"/g,"'")}"
+ADVICE ABOUT TO BE SHOWN:
+${(Array.isArray(conds)?conds:[]).slice(0,40).map((l,i)=>(i+1)+". "+String(l).replace(/"/g,"'")).join("\n")}`
+: `Complaint (may be Hindi/Hinglish/Tamil/Telugu/Malayalam/English): "${text.replace(/"/g, "'")}"`;
 
       const tried = [];
       let parsed = null;
@@ -223,6 +251,26 @@ Rules:
       /* Only ever hand back an id/flag the app actually knows about — a model can
          hallucinate, and an unrecognised id would silently break the lookup. */
       parsed = parsed || {};
+
+      /* Review has its own shape. Sanitise hard: line numbers must exist, the
+         reason is shown to a patient so it is length-capped and stripped of
+         anything that looks like a prescription. */
+      if (review) {
+        const nLines = Array.isArray(conds) ? conds.length : 0;
+        const seen = new Set();
+        const unsafe = (Array.isArray(parsed.unsafe) ? parsed.unsafe : [])
+          .map(u => ({ n: parseInt(u && u.n, 10), why: String((u && u.why) || "").replace(/\s+/g, " ").trim().slice(0, 160) }))
+          .filter(u => Number.isInteger(u.n) && u.n >= 1 && u.n <= nLines && u.why.length > 3)
+          .filter(u => (seen.has(u.n) ? false : (seen.add(u.n), true)))
+          .slice(0, 12);
+        return new Response(JSON.stringify({
+          mode: "review",
+          unsafe,
+          escalate: parsed.escalate === true,
+          escalate_why: String(parsed.escalate_why || "").replace(/\s+/g, " ").trim().slice(0, 160)
+        }), { headers: cors });
+      }
+
       const condIds = (Array.isArray(conds) ? conds : []).map(c => String(c).split("=")[0]);
       const flagIds = Array.isArray(flags) ? flags.map(String) : [];
       const clean = (v, allowed) => {
