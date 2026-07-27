@@ -2,7 +2,7 @@
 "use strict";
 /* Keep in step with the ?v= token on the script tags in index.html. Shown in the
    footer, so a cached old build is visible instead of silently giving old advice. */
-const BUILD = 15;
+const BUILD = 16;
 window.DOCTO_BUILD = BUILD;
 const CONFIG = {
   GOOGLE_CLIENT_ID: (window.DOCTO_CONFIG && window.DOCTO_CONFIG.GOOGLE_CLIENT_ID) || "", // set this in config.js
@@ -341,8 +341,10 @@ function parseAgeSex(txt){
    simply do not know — and "unknown" must behave like "could be an infant"
    wherever a paediatric contraindication exists. */
 function ageMonths(){
-  if(S && S.ageMonths!==null && S.ageMonths!==undefined) return S.ageMonths;
-  if(S && typeof S.age==="number") return S.age*12;
+  // may be called before the session exists (rule engine, test harnesses)
+  const st = (typeof S!=="undefined") ? S : null;
+  if(st && st.ageMonths!==null && st.ageMonths!==undefined) return st.ageMonths;
+  if(st && typeof st.age==="number") return st.age*12;
   return null;
 }
 function isInfant(){ const m=ageMonths(); return m!==null && m<12; }
@@ -427,9 +429,23 @@ function patternFlags(low){
   const hay = typeof low==="string" ? (low.startsWith(" ")?low:" "+low.toLowerCase()+" ") : "";
   const hits=[];
   if(!hay || !DB.redFlagPatterns) return hits;
+  const m = (typeof ageMonths==="function") ? ageMonths() : null;
+  const yrs = m===null ? null : m/12;
   for(const rule of DB.redFlagPatterns){
-    if(rule.need.every(group => group.some(term => hay.includes(term))) && !hits.includes(rule.id))
-      hits.push(rule.id);
+    /* Some diagnoses ARE an age plus a symptom. Giant cell arteritis is a
+       different disease from a sore jaw joint only because the patient is over
+       50; without age the pattern engine cannot tell them apart, and gets it
+       wrong in the direction that costs eyesight. Age unknown never blocks a
+       rule — it only ever fails safe towards firing. */
+    if(rule.minAge!==undefined && yrs!==null && yrs < rule.minAge) continue;
+    if(rule.maxAge!==undefined && yrs!==null && yrs > rule.maxAge) continue;
+    /* A term starting with "~" is a regex. People pad their sentences —
+       "hurts a bit to chew" is the same finding as "hurts to chew", and a
+       substring list can never catch every filler word someone drops in. */
+    const has = term => term.charAt(0)==="~" ? new RegExp(term.slice(1)).test(hay) : hay.includes(term);
+    const needsOk = (rule.need||[]).every(group => group.some(has));
+    const anyOk   = !rule.any || rule.any.some(has);
+    if(needsOk && anyOk && !hits.includes(rule.id)) hits.push(rule.id);
   }
   return hits;
 }
@@ -606,6 +622,17 @@ function scoreConditions(){
   if(chestWallPattern(scrubNegations(" "+text+" "))){
     sc.costochondritis=(sc.costochondritis||0)+8;
     sc.sprain=Math.max(0,(sc.sprain||0)-4);
+  }
+  /* The dangerous look-alike. Over 50, "temple headache + hurts to chew" is
+     giant cell arteritis until an ESR/CRP says otherwise — and the jaw-joint
+     plan (soft diet, night guard, wait it out) burns exactly the days in which
+     sight is lost. The red flag above should already have fired; this makes
+     sure that even if it did not, we never hand this person the TMJ plan. */
+  {
+    const yrs = ageMonths()===null ? null : ageMonths()/12;
+    const temporal=/\b(temple|temporal|side of (?:my )?head)\b/.test(text);
+    const chew=/(hurt|pain|ache|sore|tired|difficult|hard)\w*\b[^.]{0,25}?\b(?:to |when |while )?chew|chew\w*\b[^.]{0,25}?\b(hurt|pain|ache|tired)/.test(text);
+    if(yrs!==null && yrs>=50 && temporal && chew){ sc.tmj=0; }
   }
   /* Duration and one-sidedness separate sinusitis from the cold it started as. */
   const sn=sinusPattern(" "+text+" ", S.dur);

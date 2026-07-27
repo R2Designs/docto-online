@@ -488,10 +488,25 @@ redFlagPatterns: [
    ["pain","ache","agonis","agoniz","vomit","nausea","headache","forehead","brow"]
  ]},
  /* Giant cell (temporal) arteritis */
- {id:"temporal_arteritis", need:[
-   ["temple","temporal","side of my head","scalp"],
-   ["tender","hurts to brush","hurts to comb","jaw aches when","jaw pain when chewing","jaw claudication",
-    "vision","blurred","lost sight"]
+ /* Giant cell arteritis. Jaw claudication — aching or tiring of the jaw while
+    chewing — is the most specific sign there is, and almost nobody says
+    "claudication". They say "it hurts to chew". Missing that phrasing sent a
+    textbook case to the jaw-joint self-care plan; untreated GCA blinds people
+    within days, so the vocabulary here is deliberately wide and the age
+    threshold does the work of keeping it specific. */
+ {id:"temporal_arteritis", minAge:50, need:[
+   ["temple","temporal","side of my head","side of head","scalp","one side of my head"]
+ ], any:[
+   "tender","hurts to brush","hurts to comb","hurts to touch","sore to touch","scalp hurt",
+   "jaw aches when","jaw pain when chewing","jaw claudication","jaw gets tired","jaw tires",
+   // regex: tolerates the filler people put in — "hurts a bit to chew my food"
+   "~(hurt|pain|ache|sore|tired|tires|difficult|hard|trouble)\\w*\\b[^.]{0,25}?\\b(to |when |while |on )?chew",
+   "~chew\\w*\\b[^.]{0,25}?\\b(hurt|pain|ache|sore|tired)",
+   "~(jaw|jaws)\\b[^.]{0,30}?\\b(hurt|pain|ache|tired|tires|stiff|lock)",
+   "chewing hurts","hurts to eat","pain while eating",
+   "chabane","chabate","jabda",
+   "vision","blurred","blurry","double vision","lost sight","losing sight","went dark","curtain",
+   "shoulder stiffness","hips ache","morning stiffness","polymyalgia"
  ]},
  /* Retinal detachment */
  {id:"retinal_detach", need:[
