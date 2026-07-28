@@ -2,7 +2,7 @@
 "use strict";
 /* Keep in step with the ?v= token on the script tags in index.html. Shown in the
    footer, so a cached old build is visible instead of silently giving old advice. */
-const BUILD = 22;
+const BUILD = 23;
 window.DOCTO_BUILD = BUILD;
 const CONFIG = {
   GOOGLE_CLIENT_ID: (window.DOCTO_CONFIG && window.DOCTO_CONFIG.GOOGLE_CLIENT_ID) || "", // set this in config.js
@@ -298,6 +298,60 @@ function sinusPattern(low, dur){
   if(!lingering && !unilateral && !purulent) return null;
   return {lingering, unilateral, purulent, days};
 }
+/* ---------------- answer what they actually asked ----------------
+   Every case tested so far ended in a direct question — "do I need antibiotics?",
+   "should I stop the Acitrom?", "can I give him honey?", "should I just rest?" —
+   and the app answered none of them. It produced a correct plan and left the
+   person to infer their answer from bullet five.
+
+   That is the difference between a triage tool and something that feels like it
+   listened. Nothing here invents anything: every answer is a decision the app
+   has ALREADY made, said out loud in the form it was asked. */
+function directQuestions(text){
+  return String(text||"").split(/(?<=[?])\s+|\n/).filter(s=>s.includes("?")).map(s=>s.trim()).slice(0,4);
+}
+function answerAsked(cond, flag){
+  const raw=String(S.complaint||"");
+  const qs=directQuestions(raw);
+  if(!qs.length) return [];
+  const low=expandBrands(raw).toLowerCase();
+  const out=[];
+  const push=(a)=>{ if(a && !out.includes(a)) out.push(a); };
+
+  // "do I need antibiotics?"
+  if(/\bantibiotic/.test(low) && /\b(need|should|do i|require|take|give)\b/.test(low)){
+    const viral=["cold","flu","cough","sore_throat","covid","dengue","diarrhea","fever"].includes(cond&&cond.id);
+    if(viral) push("<b>Do you need antibiotics? No.</b> This is a viral illness — antibiotics do nothing against it, and taking them anyway causes side effects and builds resistance. They only become relevant if a doctor finds a bacterial infection, and the 'see a doctor if' list below is exactly when to get that checked.");
+    else if(cond && cond.refer) push("<b>About antibiotics — that is the doctor's decision, not one to make at the chemist.</b> This picture can need them, but which one and for how long depends on an examination. A wrong or short course is worse than none.");
+    else push("<b>About antibiotics:</b> don't start any without a doctor deciding you need them. Most short illnesses do not.");
+  }
+
+  // "should I stop my <medicine>?"
+  if(/\bstop\b[^.?]{0,40}\b(medicine|tablet|drug|dose|it|them)\b|\bstop (taking|the)\b|\bskip\b[^.?]{0,20}\bdose\b/.test(low)){
+    push("<b>Do not stop a prescribed medicine on your own.</b> Stopping some medicines abruptly is more dangerous than the problem you are worried about — blood thinners, steroids, heart, epilepsy and thyroid medicines especially. Ring the doctor who prescribed it and ask; take the question to them today rather than deciding at home.");
+  }
+
+  // "can I take / give X?" — answer from what the safety gates already decided
+  const m=/\b(?:can|should|may|is it ok(?:ay)? (?:to|if))\b[^.?]{0,60}?\b(?:take|give|have|drink|apply|use)\b\s+(?:him|her|my|the|a|an|some)?\s*([a-z][a-z \-]{2,28})/.exec(low);
+  if(m){
+    const thing=m[1].replace(/\b(for|to|with|and|tablet|tablets|syrup|daily|twice|a day)\b.*$/,"").trim();
+    if(thing.length>2){
+      const peds=pedsCheck(thing), inter=interactionCheck(thing);
+      if(!peds.ok)       push("<b>You asked about "+esc(thing)+" — no, not for this person.</b> "+esc(peds.why)+".");
+      else if(!inter.ok) push("<b>You asked about "+esc(thing)+" — not with what you are already taking.</b> "+esc(inter.why)+".");
+    }
+  }
+
+  // "should I just rest / wait and see / ignore it?"
+  if(/\b(just|only)?\s*(rest|wait|see how|sleep it off|ignore|stay in bed|do nothing|leave it)\b/.test(low) && /\?/.test(raw)){
+    if(flag) push("<b>No — waiting is the wrong move here.</b> What you have described needs to be looked at now, not slept on.");
+    else if(cond && cond.refer) push("<b>Rest will help, but resting instead of seeing someone is not enough here.</b> This picture needs a doctor to look at it as well.");
+    else if(S.alarms && S.alarms.length) push("<b>Rest is fine, but not on its own.</b> There is something in what you described that should be checked regardless of how the rest of it settles.");
+    else push("<b>Yes — rest and fluids are genuinely the treatment here</b>, not a fallback. Use the list below as your line for when that stops being enough.");
+  }
+  return out.slice(0,3);
+}
+
 /* Alarm features present in the complaint, regardless of what it routed to.
    Deliberately independent of the condition list: an alarm has to work when we
    have no entry for the disease, because that is precisely when it is needed. */
@@ -1285,6 +1339,13 @@ async function assess(){
     else if(_m<6 && S.temp>=100.4) bits.push("<b>Fever under 6 months should be seen the same day.</b>");
     html+=`<div class="emg" style="text-align:left"><b>Because this is a child (${_m<24?Math.round(_m)+" months":Math.floor(_m/12)+" years"}), these limits come first:</b><ul style="margin:6px 0 0 16px">`
       + bits.map(b=>`<li style="margin:4px 0">${b}</li>`).join("") + `</ul></div>`;
+  }
+  /* Their own question, answered first — before the plan they have to read
+     down into. */
+  const asked=answerAsked(c, null);
+  if(asked.length){
+    html+=`<div class="referNote" style="text-align:left"><ul style="margin:0 0 0 16px">`
+      + asked.map(a=>`<li style="margin:4px 0">${a}</li>`).join("") + `</ul></div>`;
   }
   html+=alarmNote;
   html+=referNote;
