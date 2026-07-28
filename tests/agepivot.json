@@ -1,0 +1,65 @@
+[
+{"id":"AP01","text":"Dull ache near my right temple for the last three days and it hurts a bit to chew my food. No fever, no vomiting, just a little tired.",
+ "arms":[{"p":"68 years old, male","want":"EMERGENCY|URGENT","why":"giant cell arteritis — sight-threatening, needs same-day steroids"},
+         {"p":"26 years old, male","want":"ROUTINE","why":"jaw joint / TMJ"}]},
+
+{"id":"AP02","text":"Cough and a temperature of 100.4 that started yesterday. Feeding a bit less than usual and sleeping more.",
+ "arms":[{"p":"2 months old, male","want":"EMERGENCY","why":"any fever under 3 months is a sepsis workup"},
+         {"p":"34 years old, male","want":"ROUTINE","why":"ordinary viral illness"}]},
+
+{"id":"AP03","text":"I have noticed blood in my urine for two days. There is no pain at all when I pass it and no burning.",
+ "arms":[{"p":"68 years old, male","want":"EMERGENCY|URGENT","why":"painless haematuria over 50 is urological cancer until excluded"},
+         {"p":"24 years old, female","want":"URGENT|ROUTINE","why":"far more likely infective"}]},
+
+{"id":"AP04","text":"Limping on the right leg since this morning and does not want to put weight on it. No fall and no injury that anyone saw.",
+ "arms":[{"p":"4 years old, male","want":"EMERGENCY|URGENT","why":"atraumatic limp in a child is septic hip until excluded"},
+         {"p":"32 years old, male","want":"ROUTINE","why":"mechanical, self-care first"}]},
+
+{"id":"AP05","text":"Pain in the shin at night that is bad enough to wake me from sleep. It has been going on for about five weeks.",
+ "arms":[{"p":"11 years old, male","want":"EMERGENCY|URGENT","why":"night bone pain in a child is not growing pains"},
+         {"p":"40 years old, male","want":"URGENT","why":"night pain is an alarm feature at any age"}]},
+
+{"id":"AP06","text":"Bad headache that built up over a day, my vision has gone a bit blurred and my hands and face look puffy.",
+ "arms":[{"p":"28 years old, female, PREGNANT","want":"EMERGENCY","why":"pre-eclampsia"},
+         {"p":"28 years old, female","want":"URGENT|EMERGENCY","why":"still needs looking at, but not the same emergency"}]},
+
+{"id":"AP07","text":"Sore throat and a fever since last night, generally miserable and off food.",
+ "arms":[{"p":"1 months old, female","want":"EMERGENCY","why":"neonatal fever"},
+         {"p":"30 years old, female","want":"ROUTINE","why":"ordinary sore throat"}]},
+
+{"id":"AP08","text":"Slipped in the bathroom and hit the side of my head on the basin. Feel alright now, just a mild headache and a bit slow.",
+ "arms":[{"p":"82 years old, female","want":"EMERGENCY|URGENT","why":"elderly head injury — subdural risk even with a lucid interval"},
+         {"p":"25 years old, female","want":"ROUTINE|URGENT","why":"observe at home with safety-net advice"}]},
+
+{"id":"AP09","text":"My voice has been hoarse for about five weeks now. It does not hurt, it just has not come back.",
+ "arms":[{"p":"62 years old, male","want":"URGENT|EMERGENCY","why":"persistent hoarseness over 50 — laryngeal cancer pathway"},
+         {"p":"22 years old, male","want":"ROUTINE|URGENT","why":"far more likely vocal strain"}]},
+
+{"id":"AP10","text":"There is a lump in my neck. It does not hurt, I noticed it about three weeks ago and it seems slightly bigger now.",
+ "arms":[{"p":"70 years old, male","want":"URGENT|EMERGENCY","why":"painless growing neck node in an older adult"},
+         {"p":"19 years old, male","want":"ROUTINE|URGENT","why":"usually reactive at this age"}]},
+
+{"id":"AP11","text":"Sudden pain and swelling on one side of the scrotum that started about two hours ago, and I feel sick with it.",
+ "arms":[{"p":"14 years old, male","want":"EMERGENCY","why":"testicular torsion"},
+         {"p":"45 years old, male","want":"EMERGENCY","why":"CONTROL — torsion is an emergency at any age"}]},
+
+{"id":"AP12","text":"Pain that started around my belly button yesterday and has moved down to the lower right side. Feeling sick and off food.",
+ "arms":[{"p":"22 years old, female","want":"EMERGENCY","why":"appendicitis"},
+         {"p":"55 years old, male","want":"EMERGENCY","why":"CONTROL — appendicitis at any age"}]},
+
+{"id":"AP13","text":"My back has hurt since I lifted a heavy bag two days ago. No numbness, no problem passing urine.",
+ "arms":[{"p":"78 years old, female","want":"URGENT|EMERGENCY","why":"low-trauma vertebral fracture in an older woman"},
+         {"p":"30 years old, female","want":"ROUTINE","why":"mechanical back pain"}]},
+
+{"id":"AP14","text":"Wheezing and a lot of coughing at night, and it gets much worse after running about.",
+ "arms":[{"p":"6 years old, male","want":"ROUTINE|URGENT","why":"asthma"},
+         {"p":"40 years old, male","want":"ROUTINE|URGENT","why":"CONTROL — asthma at any age"}]},
+
+{"id":"AP15","text":"I have been very tired and I have lost about six kilos over two months without trying to.",
+ "arms":[{"p":"71 years old, male","want":"URGENT|EMERGENCY","why":"unintentional weight loss in an older adult"},
+         {"p":"25 years old, male","want":"URGENT","why":"CONTROL — weight loss is an alarm at any age"}]},
+
+{"id":"AP16","text":"Watery motions about six times today, not keeping much down, and not drinking very much either.",
+ "arms":[{"p":"8 months old, female","want":"EMERGENCY|URGENT","why":"infant dehydrates fast"},
+         {"p":"35 years old, female","want":"ROUTINE","why":"oral rehydration at home"}]}
+]
