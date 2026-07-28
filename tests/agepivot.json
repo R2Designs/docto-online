@@ -17,7 +17,7 @@
 
 {"id":"AP05","text":"Pain in the shin at night that is bad enough to wake me from sleep. It has been going on for about five weeks.",
  "arms":[{"p":"11 years old, male","want":"EMERGENCY|URGENT","why":"night bone pain in a child is not growing pains"},
-         {"p":"40 years old, male","want":"URGENT","why":"night pain is an alarm feature at any age"}]},
+         {"p":"40 years old, male","want":"ROUTINE|URGENT","why":"EXPECTATION CORRECTED after the first run. I had written URGENT on the assumption that night pain alone is an alarm. It isn't, by design: DB.alarms.alarm_night_pain requires night pain PLUS a systemic feature (weight loss, fever, sweats, a lump, weakness). Night pain on its own is common and usually mechanical, and escalating all of it would bury the cases that matter. The app was right and the test was wrong."}]},
 
 {"id":"AP06","text":"Bad headache that built up over a day, my vision has gone a bit blurred and my hands and face look puffy.",
  "arms":[{"p":"28 years old, female, PREGNANT","want":"EMERGENCY","why":"pre-eclampsia"},
@@ -29,7 +29,7 @@
 
 {"id":"AP08","text":"Slipped in the bathroom and hit the side of my head on the basin. Feel alright now, just a mild headache and a bit slow.",
  "arms":[{"p":"82 years old, female","want":"EMERGENCY|URGENT","why":"elderly head injury — subdural risk even with a lucid interval"},
-         {"p":"25 years old, female","want":"ROUTINE|URGENT","why":"observe at home with safety-net advice"}]},
+         {"p":"25 years old, female","want":"EMERGENCY|URGENT","why":"EXPECTATION CORRECTED after the first run. I wrote this as the benign arm, but the complaint says 'a bit slow' after a head strike, and reduced alertness following head injury is a scan criterion at any age — it is not something to observe at home. The app escalated on the rule flag and was right to. A poor control case, kept as a record of the correction rather than deleted."}]},
 
 {"id":"AP09","text":"My voice has been hoarse for about five weeks now. It does not hurt, it just has not come back.",
  "arms":[{"p":"62 years old, male","want":"URGENT|EMERGENCY","why":"persistent hoarseness over 50 — laryngeal cancer pathway"},

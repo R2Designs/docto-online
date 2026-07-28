@@ -1,0 +1,18 @@
+{
+"AP01|none":["tmj",null,0], "AP01|A":[null,null,1],              "AP01|B":["tmj",null,0],
+"AP02|none":["fever",null,0],"AP02|A":[null,null,1],              "AP02|B":["flu",null,0],
+"AP03|none":[null,null,1],   "AP03|A":[null,null,1],              "AP03|B":[null,null,0],
+"AP04|none":[null,null,0],   "AP04|A":[null,null,1],              "AP04|B":[null,null,0],
+"AP05|none":[null,null,0],   "AP05|A":[null,null,0],              "AP05|B":[null,null,0],
+"AP06|none":[null,null,1],   "AP06|A":[null,null,1],              "AP06|B":[null,null,1],
+"AP07|none":["sore_throat",null,0],"AP07|A":[null,null,1],        "AP07|B":["sore_throat",null,0],
+"AP08|none":[null,"head_injury",1],"AP08|A":[null,"head_injury",1],"AP08|B":[null,"head_injury",1],
+"AP09|none":[null,null,0],   "AP09|A":[null,null,1],              "AP09|B":[null,null,0],
+"AP10|none":[null,null,0],   "AP10|A":[null,null,1],              "AP10|B":[null,null,0],
+"AP11|none":[null,null,1],   "AP11|A":[null,"torsion",1],         "AP11|B":[null,"torsion",1],
+"AP12|none":[null,"appendicitis",1],"AP12|A":[null,null,1],       "AP12|B":[null,null,1],
+"AP13|none":["sprain",null,0],"AP13|A":["back_pain",null,0],      "AP13|B":["sprain",null,0],
+"AP14|none":["asthma",null,0],"AP14|A":["asthma",null,0],         "AP14|B":["asthma",null,0],
+"AP15|none":["weight",null,0],"AP15|A":[null,null,1],             "AP15|B":[null,null,0],
+"AP16|none":["diarrhea",null,0],"AP16|A":["diarrhea","dehydration",1],"AP16|B":["diarrhea",null,0]
+}
