@@ -2,7 +2,7 @@
 "use strict";
 /* Keep in step with the ?v= token on the script tags in index.html. Shown in the
    footer, so a cached old build is visible instead of silently giving old advice. */
-const BUILD = 23;
+const BUILD = 24;
 window.DOCTO_BUILD = BUILD;
 const CONFIG = {
   GOOGLE_CLIENT_ID: (window.DOCTO_CONFIG && window.DOCTO_CONFIG.GOOGLE_CLIENT_ID) || "", // set this in config.js
@@ -979,11 +979,12 @@ function pickTests(){
 async function llmClassify(text){
   if(!CONFIG.LLM_ENDPOINT) return null;
   try{
-    const key="docto_llm_"+text.toLowerCase().trim().replace(/\s+/g," ").slice(0,90);
+    const prof=readerProfile();                       // same reason as llmExtract
+    const key="docto_llm_"+prof+"|"+text.toLowerCase().trim().replace(/\s+/g," ").slice(0,90);
     const cached=localStorage.getItem(key); if(cached) return JSON.parse(cached);
     const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),6000);
     const resp=await fetch(CONFIG.LLM_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({text,
+      body:JSON.stringify({text, profile:prof,
         conds:condsForReader(text),
         flags:Object.keys(DB.emergencyAdvice)}),
       signal:ctrl.signal});
@@ -1081,6 +1082,26 @@ async function safetyReview(lines){
   }catch(e){ return null; }   // offline, slow, or unsupported — the local guards still stand
 }
 
+/* What the reader is allowed to know about the patient.
+
+   Age is the single most decision-changing fact in triage, and for most of this
+   app's life the reader never received it: it got the complaint text, a condition
+   list we ranked, and nothing else. So when it called a 65-year-old's temple pain
+   a jaw joint, that was not the model failing to know medicine — it was us asking
+   it to make an age-dependent distinction while withholding the age.
+
+   Medicines and existing conditions are deliberately NOT sent here. They aren't
+   collected until after this question is asked, and interactions are caught by a
+   deterministic gate that does not need a model's opinion. The later review pass
+   sees the full profile. */
+function readerProfile(){
+  const bits=[]; const m=ageMonths();
+  if(m!==null) bits.push(m<24 ? Math.round(m)+" months old" : Math.floor(m/12)+" years old");
+  if(S.sex) bits.push({M:"male",F:"female",O:""}[S.sex]||"");
+  if(S.preg) bits.push("PREGNANT");
+  return bits.filter(Boolean).join(", ");
+}
+
 async function llmExtract(text){
   /* Only worth a call when there's actually prose to read. "fever since yesterday"
      tells the rule engine everything already, so paying to parse it is waste. */
@@ -1088,11 +1109,15 @@ async function llmExtract(text){
   const words=text.trim().split(/\s+/).length;
   if(text.length<25 || words<3) return {};   // mandatory above this, not just for long narratives
   try{
-    const key="docto_ex_"+text.toLowerCase().trim().replace(/\s+/g," ").slice(0,90);
+    const prof=readerProfile();
+    /* The profile is part of the cache key, not just the request. Without it a
+       10-month-old and a 40-year-old who describe a cough in the same words share
+       one cached answer — which is exactly the bug this change exists to fix. */
+    const key="docto_ex_"+prof+"|"+text.toLowerCase().trim().replace(/\s+/g," ").slice(0,90);
     const cached=localStorage.getItem(key); if(cached) return JSON.parse(cached);
     const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),12000);
     const resp=await fetch(CONFIG.LLM_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({mode:"extract", text,
+      body:JSON.stringify({mode:"extract", text, profile:prof,
         conds:condsForReader(text),
         flags:relevantFlags(text),
         areas:Object.keys(DB_PAIN_MAP)}),

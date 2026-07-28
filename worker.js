@@ -23,7 +23,7 @@ const ALLOWED_ORIGINS = [
   "https://r2designs.github.io",
   "http://localhost:8000"
 ];
-const VERSION = "v12";
+const VERSION = "v13";
 // Claude reads messy clinical prose best, so it leads when a key is present.
 const CLAUDE_MODELS = ["claude-haiku-4-5-20251001"];
 // Workers AI models, tried in order. Cloudflare retires model names periodically
@@ -55,8 +55,35 @@ function pickText(r, depth = 0) {
     r.output, r.candidates, r.parts
   ];
   for (const c of candidates) { const s = pickText(c, depth + 1); if (s) return s; }
-  // Only now: the object may itself be the parsed classification.
-  if (r.red_flag !== undefined || (r.id && Object.keys(r).length <= 3)) return JSON.stringify(r);
+  // Only now: the object may itself be the answer, already parsed by the provider.
+  // `unsafe` is here because Workers AI hands back {"response":{unsafe:[…]}} — a
+  // correct review that used to be walked straight past and thrown away.
+  if (r.red_flag !== undefined || Array.isArray(r.unsafe) ||
+      (r.id && Object.keys(r).length <= 3)) return JSON.stringify(r);
+  return "";
+}
+
+/* Take the first COMPLETE {...} object out of a string by matching braces, with
+   quotes and escapes respected.
+
+   This replaces a lazy regex (/\{[\s\S]*?\}/) that stopped at the first closing
+   brace anywhere. That was fine for a classify reply, which is flat — but a review
+   or extract reply nests, so the regex returned a truncated fragment like
+   `{"unsafe":[{"n":2,"why":"…"}` and JSON.parse threw. Any nested answer a model
+   wrapped in prose or a code fence was silently lost. */
+function firstJsonObject(s) {
+  const start = s.indexOf("{");
+  if (start < 0) return "";
+  let depth = 0, inStr = false, esc = false;
+  for (let i = start; i < s.length; i++) {
+    const c = s[i];
+    if (esc) { esc = false; continue; }
+    if (c === "\\") { esc = true; continue; }
+    if (c === '"') { inStr = !inStr; continue; }
+    if (inStr) continue;
+    if (c === "{") depth++;
+    else if (c === "}" && --depth === 0) return s.slice(start, i + 1);
+  }
   return "";
 }
 
@@ -66,8 +93,8 @@ function extractJson(input) {
   const s = pickText(input);
   if (!s) return {};
   try { return JSON.parse(s); } catch (e) {}
-  const m = s.match(/\{[\s\S]*?\}/);
-  if (m) { try { return JSON.parse(m[0]); } catch (e) {} }
+  const m = firstJsonObject(s);
+  if (m) { try { return JSON.parse(m); } catch (e) {} }
   return {};
 }
 
@@ -84,21 +111,52 @@ export default {
     if (req.method === "GET")
       return new Response(JSON.stringify({
         ok: true, version: VERSION,
+        /* So a deploy can be CONFIRMED rather than assumed. Twice now I have
+           debugged behaviour that was never live. */
+        features: ["classify", "extract", "review", "profile"],
         engines: { claude: !!env.ANTHROPIC_KEY, workersAI: !!env.AI, gemini: !!env.GEMINI_KEY }
       }), { headers: cors });
     if (req.method !== "POST")
       return new Response(JSON.stringify({ error: "POST only" }), { status: 405, headers: cors });
 
     try {
-      const { text, conds, flags, areas, mode, debug } = await req.json();
+      const { text, conds, flags, areas, mode, profile, debug } = await req.json();
       if (!text || typeof text !== "string" || text.length > 1500)
         return new Response(JSON.stringify({ error: "bad input" }), { status: 400, headers: cors });
+
+      /* Who the complaint is about. Age is the single most decision-changing fact
+         in triage and until now the reader was never told it — we asked the model
+         to separate a jaw joint from giant cell arteritis while withholding the
+         only fact that separates them. Kept short and sanitised: it is context for
+         the reader, never something the caller can use to inject instructions. */
+      const prof = (typeof profile === "string" ? profile : "")
+        .replace(/[\r\n"]/g, " ").trim().slice(0, 120);
 
       const condList = Array.isArray(conds) ? conds.slice(0, 100).join("; ") : "";
       const flagList = Array.isArray(flags) ? flags.slice(0, 60).join(", ") : "";
       const areaList = Array.isArray(areas) ? areas.slice(0, 20).join(", ") : "";
       const extract  = mode === "extract";
       const review   = mode === "review";
+
+      /* Did the engine actually answer? This decides whether a reply is accepted
+         or the chain falls through to the next model, so it has to know what a
+         valid answer LOOKS like in each mode.
+
+         It didn't. It tested `p.id || p.red_flag` — the classify shape — for all
+         three modes. A review reply has neither field, so every correct review
+         answer from every engine was discarded, the chain ran to exhaustion, and
+         the handler returned the empty default: "nothing here is unsafe". The
+         review layer reported all-clear for its entire life, including for honey
+         offered to a ten-month-old, while three separate models were getting it
+         right and being thrown away. */
+      const answered = p => review
+        ? (Array.isArray(p.unsafe) || typeof p.escalate === "boolean")
+        : !!(p.id || p.red_flag);
+
+      /* A review reply is a list with reasons, not two ids. Sixty tokens truncates
+         it mid-JSON, which the parser then discards — the same failure wearing a
+         different hat. */
+      const maxTok = review ? 400 : extract ? 300 : 60;
 
       /* Two modes:
          - classify (default): just pick a condition id / red flag.
@@ -139,6 +197,7 @@ Reply ONLY: {"id","red_flag","emergency","emergency_reason","suggested","duratio
 - emergency_reason: if emergency is true, one short clause naming what you suspect and why, e.g. "fever with a heart murmur and splinter haemorrhages suggests endocarditis". Empty otherwise. Name the concern only; give no treatment advice.
 - suggested: ONLY when id is "none" — the condition you would actually name, in 1-4 plain words (e.g. "trigger finger", "lipoma", "onychomycosis"). This is used to decide what to add to the app\'s database later. Empty if id is set or you genuinely cannot say. Never suggest a treatment here, only a name.
 - id/red_flag: best match from the lists, else "none". Judge the DESCRIPTION, not the patient's own conclusion — "is this just a migraine?" is not reassurance. Weigh patterns and numbers: navel pain migrating to right lower abdomen + nausea + low fever = appendicitis; BP >=180/120 = hypertensive emergency; MAOI drug + aged cheese/wine/cured meat + pounding headache = tyramine crisis; SSRI+tramadol/triptan + tremor/sweats/fever = serotonin syndrome; saddle numbness + bladder change = cauda equina; Graves + fever + HR>130 = thyroid storm.
+- A "PATIENT:" line may precede the complaint. Age, sex and pregnancy change the answer and must be used — never assume an adult. The same temple ache with jaw pain is a jaw joint at 25 and giant cell arteritis (sight-threatening, emergency) over 50; any fever under 3 months old is an emergency; a limp with no injury in a child is not a sprain; painless blood in the urine over 50 is cancer until excluded; a new severe headache in pregnancy may be pre-eclampsia; night bone pain in a child is not growing pains. If no PATIENT line is given, say so by leaving your judgement broad rather than assuming.
 - duration: today (<24h) | days | week | weeks | none
 - severity: 1-10 only if stated/clearly implied, else null
 - temp_f: number in F (convert from C), else null
@@ -161,7 +220,7 @@ Rules:
 COMPLAINT: "${text.replace(/"/g,"'")}"
 ADVICE ABOUT TO BE SHOWN:
 ${(Array.isArray(conds)?conds:[]).slice(0,40).map((l,i)=>(i+1)+". "+String(l).replace(/"/g,"'")).join("\n")}`
-: `Complaint (may be Hindi/Hinglish/Tamil/Telugu/Malayalam/English): "${text.replace(/"/g, "'")}"`;
+: `${prof ? `PATIENT: ${prof}\n` : ""}Complaint (may be Hindi/Hinglish/Tamil/Telugu/Malayalam/English): "${text.replace(/"/g, "'")}"`;
 
       const tried = [];
       let parsed = null;
@@ -179,7 +238,7 @@ ${(Array.isArray(conds)?conds:[]).slice(0,40).map((l,i)=>(i+1)+". "+String(l).re
               },
               body: JSON.stringify({
                 model,
-                max_tokens: extract ? 300 : 60,
+                max_tokens: maxTok,
                 temperature: 0,
                 system,
                 messages: [{ role: "user", content: user }]
@@ -188,7 +247,7 @@ ${(Array.isArray(conds)?conds:[]).slice(0,40).map((l,i)=>(i+1)+". "+String(l).re
             const j = await r.json();
             const p = extractJson(j);
             tried.push({ engine: "claude", model, status: r.status, err: j && j.error && j.error.message });
-            if (p.id || p.red_flag) { parsed = p; break; }
+            if (answered(p)) { parsed = p; break; }
           } catch (e) {
             tried.push({ engine: "claude", model, err: String(e).slice(0, 200) });
           }
@@ -201,14 +260,14 @@ ${(Array.isArray(conds)?conds:[]).slice(0,40).map((l,i)=>(i+1)+". "+String(l).re
           try {
             const r = await env.AI.run(model, {
               messages: [{ role: "system", content: system }, { role: "user", content: user }],
-              max_tokens: extract ? 300 : 60,
+              max_tokens: maxTok,
               temperature: 0
             });
             const p = extractJson(r);
             tried.push({ engine: "workers-ai", model,
                          text: pickText(r).slice(0, 200),
                          shape: JSON.stringify(r).slice(0, 300) });
-            if (p.id || p.red_flag) { parsed = p; break; }
+            if (answered(p)) { parsed = p; break; }
           } catch (e) {
             tried.push({ engine: "workers-ai", model, err: String(e).slice(0, 200) });
           }
@@ -239,7 +298,7 @@ ${(Array.isArray(conds)?conds:[]).slice(0,40).map((l,i)=>(i+1)+". "+String(l).re
             const raw = j?.candidates?.[0]?.content?.parts?.[0]?.text || "";
             const p = extractJson(raw);
             tried.push({ engine: "gemini", model, status: r.status, err: j?.error?.message });
-            if (p.id || p.red_flag) { parsed = p; break; }
+            if (answered(p)) { parsed = p; break; }
           } catch (e) {
             tried.push({ engine: "gemini", model, err: String(e).slice(0, 200) });
           }
